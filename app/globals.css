@@ -1,45 +1,106 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+    --background: #ffffff;
+    --foreground: #0f172a;
+    /* Slate 900 */
+    --primary: #01334c;
+    --primary-foreground: #ffffff;
+    --muted: #f1f5f9;
+    /* Slate 100 */
+    --muted-foreground: #64748b;
+    /* Slate 500 */
+    --border: #e2e8f0;
+    /* Slate 200 */
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-inter);
-  --font-mono: var(--font-geist-mono);
-  --font-poppins: var(--font-poppins);
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-border: var(--border);
+
+    --font-sans: var(--font-inter);
+    --font-mono: var(--font-geist-mono);
+    --font-poppins: var(--font-poppins);
 }
 
 /* Custom Scrollbar from app.html */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #475569; }
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
 
-.scrollbar-hide::-webkit-scrollbar { display: none; }
-.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
 
 /* Loading Dots from app.html */
 .dot-flashing {
-    position: relative; width: 6px; height: 6px; border-radius: 5px;
-    background-color: #6366f1; color: #6366f1;
+    position: relative;
+    width: 6px;
+    height: 6px;
+    border-radius: 5px;
+    background-color: var(--primary);
+    color: var(--primary);
     animation: dot-flashing 1s infinite linear alternate;
     animation-delay: 0.5s;
 }
-.dot-flashing::before, .dot-flashing::after {
-    content: ''; display: inline-block; position: absolute; top: 0;
-    width: 6px; height: 6px; border-radius: 5px; background-color: #6366f1; color: #6366f1;
+
+.dot-flashing::before,
+.dot-flashing::after {
+    content: '';
+    display: inline-block;
+    position: absolute;
+    top: 0;
+    width: 6px;
+    height: 6px;
+    border-radius: 5px;
+    background-color: var(--primary);
+    color: var(--primary);
     animation: dot-flashing 1s infinite alternate;
 }
-.dot-flashing::before { left: -10px; animation-delay: 0s; }
-.dot-flashing::after { left: 10px; animation-delay: 1s; }
+
+.dot-flashing::before {
+    left: -10px;
+    animation-delay: 0s;
+}
+
+.dot-flashing::after {
+    left: 10px;
+    animation-delay: 1s;
+}
 
 @keyframes dot-flashing {
-    0% { background-color: #6366f1; }
-    50%, 100% { background-color: rgba(99, 102, 241, 0.2); }
+    0% {
+        background-color: var(--primary);
+    }
+
+    50%,
+    100% {
+        background-color: rgba(1, 51, 76, 0.2);
+    }
 }
 
 /* Styles from index.html for Preview */
@@ -50,9 +111,10 @@
     width: 210mm;
     min-height: 297mm;
     background: white;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
     margin: 0 auto;
-    padding: 0; /* Let content handle padding or use what index.html had */
+    padding: 0;
+    /* Let content handle padding or use what index.html had */
     color: #1a202c;
 }
 
@@ -65,7 +127,8 @@
     /* Standard A4 Height */
     background: white;
     padding: 40px;
-    /* box-shadow: 0 0 15px rgba(0, 0, 0, 0.1); */ /* Handled by a4-page container */
+    /* box-shadow: 0 0 15px rgba(0, 0, 0, 0.1); */
+    /* Handled by a4-page container */
     position: relative;
     display: flex;
     flex-direction: column;
@@ -173,7 +236,8 @@
 .social-icon {
     font-size: 28px;
     text-decoration: none;
-    color: #2A3B90; /* Default color if not specified */
+    color: #2A3B90;
+    /* Default color if not specified */
 }
 
 /* Font Awesome replacements if not using the library, but user requested existing content.
@@ -181,8 +245,14 @@
    We should probably add FontAwesome CDN to layout or assume it's there. 
    For now, I'll add the styles, but I should add the CDN link to layout.tsx */
 
-.fa-linkedin { color: #0077b5; }
-.fa-facebook { color: #1877f2; }
+.fa-linkedin {
+    color: #0077b5;
+}
+
+.fa-facebook {
+    color: #1877f2;
+}
+
 .fa-instagram {
     background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%);
     -webkit-background-clip: text;
@@ -345,7 +415,9 @@
     border: 1px solid #AED6F1;
 }
 
-.impact-header { color: #2E86C1; }
+.impact-header {
+    color: #2E86C1;
+}
 
 .impact-item {
     display: flex;
@@ -354,7 +426,9 @@
     margin-bottom: 15px;
 }
 
-.impact-item:last-child { margin-bottom: 0; }
+.impact-item:last-child {
+    margin-bottom: 0;
+}
 
 .impact-icon {
     flex: 0 0 50px;
@@ -380,7 +454,9 @@
     border: 1px solid #DCE775;
 }
 
-.awards-header { color: #2E5848; }
+.awards-header {
+    color: #2E5848;
+}
 
 .awards-list {
     list-style: none;
@@ -429,7 +505,9 @@
     border: 1px solid #FFCC80;
 }
 
-.keynote-header { color: #A84418; }
+.keynote-header {
+    color: #A84418;
+}
 
 .logos-grid {
     display: flex;
@@ -488,7 +566,9 @@
     gap: 5px;
 }
 
-.microsoft-icon { color: #F25022; }
+.microsoft-icon {
+    color: #F25022;
+}
 
 .summary-section {
     background-color: #FFF3E0;
@@ -529,4 +609,35 @@
     color: #4A148C;
     font-size: 14px;
     font-weight: 500;
+}
+
+/* Modal Animations */
+@keyframes fade-in {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slide-up {
+    from {
+        opacity: 0;
+        transform: translateY(24px) scale(0.97);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.animate-fade-in {
+    animation: fade-in 0.3s ease-out forwards;
+}
+
+.animate-slide-up {
+    animation: slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }

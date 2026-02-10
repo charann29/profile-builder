@@ -8,27 +8,47 @@ import {
   ArrowUp,
   File,
   Download,
-  Loader2
+  Loader2,
+  Linkedin,
+  CheckCircle2,
+  XCircle,
+  ExternalLink
 } from 'lucide-react';
-import { defaultProfileContent } from './lib/default-content';
-
-// Import html2pdf dynamically to avoid SSR issues
-// We'll handle this in the download function
-
-interface Message {
-  text: string;
-  sender: 'user' | 'bot';
-}
+import { renderProfile } from './lib/default-content';
+import { useProfileStore } from './lib/store';
+import { extractProfileFromLinkedIn, getAiChatResponse } from './lib/groq';
 
 export default function Home() {
+  const {
+    profileData,
+    messages,
+    isTyping,
+    setProfileData,
+    addMessage,
+    setIsTyping
+  } = useProfileStore();
+
   const [userInput, setUserInput] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
   const [loadingPreview, setLoadingPreview] = useState(false);
   const [downloading, setDownloading] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [profileContent, setProfileContent] = useState(defaultProfileContent);
+  const [profileHtml, setProfileHtml] = useState('');
+
+  // LinkedIn Modal State
+  const [showLinkedinModal, setShowLinkedinModal] = useState(true);
+  const [linkedinUrl, setLinkedinUrl] = useState('');
+  const [scrapeStatus, setScrapeStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [scrapeMessage, setScrapeMessage] = useState('');
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
+
+  // Update profile HTML whenever data changes
+  useEffect(() => {
+    setLoadingPreview(true);
+    const html = renderProfile(profileData);
+    setProfileHtml(html);
+    const timer = setTimeout(() => setLoadingPreview(false), 300);
+    return () => clearTimeout(timer);
+  }, [profileData]);
 
   // Auto-scroll to bottom of chat
   useEffect(() => {
@@ -37,31 +57,71 @@ export default function Home() {
     }
   }, [messages, isTyping]);
 
-  const sendMessage = () => {
-    if (userInput.trim() === '') return;
+  const isValidLinkedinUrl = (url: string) => {
+    return /^https?:\/\/(www\.)?linkedin\.com\/in\/[\w-]+\/?$/.test(url.trim());
+  };
 
-    // Add user message
+  const scrapeLinkedin = async () => {
+    if (!isValidLinkedinUrl(linkedinUrl)) {
+      setScrapeStatus('error');
+      setScrapeMessage('Please enter a valid LinkedIn URL (e.g. https://www.linkedin.com/in/username/)');
+      return;
+    }
+
+    setScrapeStatus('loading');
+    setScrapeMessage('');
+
+    try {
+      const res = await fetch('http://localhost:8000/scrape', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ linkedin_url: linkedinUrl.trim() }),
+      });
+
+      if (res.ok) {
+        const rawData = await res.json();
+        setScrapeStatus('success');
+        setScrapeMessage('Profile scraped! Processing with AI...');
+
+        // Use Groq to extract structured data
+        const extractedData = await extractProfileFromLinkedIn(rawData);
+        setProfileData(extractedData);
+
+        addMessage({ text: "I've successfully imported your LinkedIn profile! I've filled in your name, tagline, and experience. What would you like to focus on next? Maybe your 'About Me' or 'Personal Story'?", sender: 'bot' });
+
+        setTimeout(() => setShowLinkedinModal(false), 2000);
+      } else {
+        const data = await res.json().catch(() => null);
+        setScrapeStatus('error');
+        setScrapeMessage(data?.detail || data?.message || `Request failed with status ${res.status}`);
+      }
+    } catch {
+      setScrapeStatus('error');
+      setScrapeMessage('Could not connect to the scraper server. Make sure the backend is running on port 8000.');
+    }
+  };
+
+  const sendMessage = async () => {
+    if (userInput.trim() === '' || isTyping) return;
+
     const userText = userInput;
-    setMessages(prev => [...prev, { text: userText, sender: 'user' }]);
+    addMessage({ text: userText, sender: 'user' });
     setUserInput('');
     setIsTyping(true);
 
-    // Simulate AI response and generation
-    setTimeout(() => {
+    try {
+      const { text, updatedData } = await getAiChatResponse([...messages, { text: userText, sender: 'user' }], profileData);
+
+      if (updatedData) {
+        setProfileData(updatedData);
+      }
+
+      addMessage({ text, sender: 'bot' });
+    } catch {
+      addMessage({ text: "I'm having a bit of trouble connecting to my brain. Could you try again?", sender: 'bot' });
+    } finally {
       setIsTyping(false);
-      setMessages(prev => [...prev, { text: "Updating your document...", sender: 'bot' }]);
-      setLoadingPreview(true);
-
-      // Simulate generation delay
-      setTimeout(() => {
-        // In a real app, this would call an API with userText
-        // For now, we just mock it or keep the default content (or duplicate it for effect)
-        // Let's just keep the default content for this demo as requested
-        // setProfileContent(defaultProfileContent); 
-        setLoadingPreview(false);
-      }, 600);
-
-    }, 800);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -79,12 +139,11 @@ export default function Home() {
         return;
       }
 
-      // @ts-ignore
       const html2pdf = (await import('html2pdf.js')).default;
 
       const opt = {
         margin: 0,
-        filename: 'my-profile.pdf',
+        filename: `${profileData.fullName || 'my'}-profile.pdf`,
         image: { type: 'jpeg' as const, quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const }
@@ -97,52 +156,126 @@ export default function Home() {
   };
 
   return (
-    <div className="bg-[#0f172a] text-slate-200 h-screen overflow-hidden flex selection:bg-indigo-500 selection:text-white font-[family-name:var(--font-inter)]">
+    <div className="bg-white text-slate-900 h-screen overflow-hidden flex selection:bg-[#01334c] selection:text-white font-[family-name:var(--font-inter)]">
+
+      {/* LinkedIn URL Modal */}
+      {showLinkedinModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-3xl shadow-2xl shadow-slate-900/20 w-full max-w-md mx-4 overflow-hidden border border-slate-100 animate-slide-up">
+
+            {/* Header */}
+            <div className="bg-gradient-to-br from-[#01334c] to-[#024466] px-8 py-8 text-center">
+              <div className="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-sm flex items-center justify-center mx-auto mb-4 ring-4 ring-white/10 shadow-lg">
+                <Linkedin className="w-8 h-8 text-white" />
+              </div>
+              <h2 className="text-xl font-bold text-white tracking-tight">Import LinkedIn Profile</h2>
+              <p className="text-sm text-white/60 mt-1.5 font-medium">Paste your profile URL to get started</p>
+            </div>
+
+            {/* Body */}
+            <div className="px-8 py-8 space-y-5">
+              <div>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">LinkedIn Profile URL</label>
+                <div className="relative group">
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                    <ExternalLink className="w-4 h-4 text-slate-400 group-focus-within:text-[#01334c] transition-colors" />
+                  </div>
+                  <input
+                    type="url"
+                    value={linkedinUrl}
+                    onChange={(e) => { setLinkedinUrl(e.target.value); if (scrapeStatus === 'error') setScrapeStatus('idle'); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter' && scrapeStatus !== 'loading') scrapeLinkedin(); }}
+                    placeholder="https://www.linkedin.com/in/username/"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3.5 pl-11 pr-4 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#01334c]/20 focus:border-[#01334c] transition-all group-hover:bg-white group-hover:shadow-md"
+                    autoFocus
+                    disabled={scrapeStatus === 'loading' || scrapeStatus === 'success'}
+                  />
+                </div>
+              </div>
+
+              {/* Status Message */}
+              {scrapeStatus === 'error' && (
+                <div className="flex items-start gap-3 bg-red-50 border border-red-100 text-red-700 text-sm rounded-xl px-4 py-3 animate-fade-in">
+                  <XCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                  <span>{scrapeMessage}</span>
+                </div>
+              )}
+
+              {scrapeStatus === 'success' && (
+                <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-100 text-emerald-700 text-sm rounded-xl px-4 py-3 animate-fade-in">
+                  <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+                  <span className="font-medium">{scrapeMessage}</span>
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="space-y-3 pt-1">
+                <button
+                  onClick={scrapeLinkedin}
+                  disabled={scrapeStatus === 'loading' || scrapeStatus === 'success' || !linkedinUrl.trim()}
+                  className="w-full py-3.5 rounded-xl bg-[#01334c] hover:bg-[#024466] disabled:opacity-50 disabled:hover:bg-[#01334c] text-white text-sm font-bold uppercase tracking-wider transition-all duration-300 shadow-lg shadow-[#01334c]/20 hover:shadow-[#01334c]/40 active:scale-[0.98] flex items-center justify-center gap-2.5"
+                >
+                  {scrapeStatus === 'loading' ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Processing Profile...</span>
+                    </>
+                  ) : scrapeStatus === 'success' ? (
+                    <>
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>Ready!</span>
+                    </>
+                  ) : (
+                    <span>Import Profile</span>
+                  )}
+                </button>
+
+                <button
+                  onClick={() => setShowLinkedinModal(false)}
+                  disabled={scrapeStatus === 'loading'}
+                  className="w-full py-2.5 rounded-xl text-slate-400 hover:text-slate-600 text-xs font-medium transition-colors disabled:opacity-50"
+                >
+                  Skip for now
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Sidebar / Chat Interface */}
-      <aside className="w-[350px] flex-shrink-0 flex flex-col border-r border-slate-700/50 bg-[#111827] relative z-20">
+      <aside className="w-[400px] flex-shrink-0 flex flex-col border-r border-slate-200 bg-white relative z-20 shadow-xl shadow-slate-200/50">
 
-        <div className="h-16 flex items-center px-6 border-b border-slate-700/50 bg-[#111827]">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-              <FileText className="w-4 h-4 text-white" />
+        <div className="h-20 flex items-center px-8 border-b border-slate-100 bg-white/80 backdrop-blur-md sticky top-0 z-10">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-[#01334c] flex items-center justify-center shadow-lg shadow-[#01334c]/20 ring-4 ring-[#01334c]/5 transition-transform hover:scale-105 duration-300">
+              <FileText className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="font-semibold text-sm text-white tracking-wide">ResumeAI</h1>
-              <p className="text-xs text-slate-500">Document Builder</p>
+              <h1 className="font-bold text-lg text-[#01334c] tracking-tight">ProfileArchitect</h1>
+              <p className="text-xs font-medium text-slate-400 uppercase tracking-widest">AI Workspace</p>
             </div>
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 space-y-6 scrollbar-hide" id="chatContainer" ref={chatContainerRef}>
-          <div className="flex gap-3">
-            <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex-shrink-0 flex items-center justify-center">
-              <Bot className="w-4 h-4 text-indigo-400" />
-            </div>
-            <div className="space-y-1">
-              <div className="bg-slate-800/50 border border-slate-700/50 px-4 py-3 rounded-2xl rounded-tl-none text-sm text-slate-300 leading-relaxed max-w-[260px]">
-                Hello! I'm here to design your professional profile. Just tell me your details, and I'll format it onto the A4 page on the right.
-              </div>
-            </div>
-          </div>
-
+        <div className="flex-1 overflow-y-auto p-6 space-y-8 scrollbar-hide" id="chatContainer" ref={chatContainerRef}>
           {messages.map((msg, index) => (
-            <div key={index} className={`flex gap-3 ${msg.sender === 'user' ? 'flex-row-reverse' : ''}`}>
+            <div key={index} className={`flex gap-4 group ${msg.sender === 'user' ? 'flex-row-reverse' : ''}`}>
               <div
-                className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center ${msg.sender === 'user' ? 'bg-indigo-600' : 'bg-slate-800 border border-slate-700'
+                className={`w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center shadow-md transition-transform duration-300 group-hover:scale-110 ${msg.sender === 'user' ? 'bg-[#01334c] ring-4 ring-[#01334c]/10' : 'bg-slate-50 border border-slate-100'
                   }`}
               >
                 {msg.sender === 'user' ? (
-                  <User className="w-4 h-4 text-white" />
+                  <User className="w-5 h-5 text-white" />
                 ) : (
-                  <Bot className="w-4 h-4 text-indigo-400" />
+                  <Bot className="w-5 h-5 text-[#01334c]" />
                 )}
               </div>
               <div className="space-y-1">
                 <div
-                  className={`px-4 py-3 rounded-2xl text-sm leading-relaxed max-w-[260px] ${msg.sender === 'user'
-                    ? 'bg-indigo-600 text-white rounded-tr-none shadow-md shadow-indigo-900/20'
-                    : 'bg-slate-800/50 border border-slate-700/50 text-slate-300 rounded-tl-none'
+                  className={`px-6 py-4 rounded-3xl text-[15px] leading-relaxed max-w-[280px] shadow-sm ${msg.sender === 'user'
+                    ? 'bg-[#01334c] text-white rounded-tr-none shadow-[#01334c]/20'
+                    : 'bg-slate-50 border border-slate-100 text-slate-600 rounded-tl-none'
                     }`}
                 >
                   <p>{msg.text}</p>
@@ -152,81 +285,86 @@ export default function Home() {
           ))}
 
           {isTyping && (
-            <div className="flex gap-3 animate-fade-in">
-              <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex-shrink-0 flex items-center justify-center">
-                <Bot className="w-4 h-4 text-indigo-400" />
+            <div className="flex gap-4 animate-fade-in">
+              <div className="w-10 h-10 rounded-full bg-slate-50 border border-slate-100 flex-shrink-0 flex items-center justify-center shadow-sm">
+                <Bot className="w-5 h-5 text-[#01334c]" />
               </div>
-              <div className="bg-slate-800/50 border border-slate-700/50 px-4 py-4 rounded-2xl rounded-tl-none flex items-center">
+              <div className="bg-slate-50 border border-slate-100 px-6 py-5 rounded-3xl rounded-tl-none flex items-center shadow-sm">
                 <div className="dot-flashing mx-2"></div>
               </div>
             </div>
           )}
         </div>
 
-        <div className="p-4 border-t border-slate-700/50 bg-[#111827]">
-          <div className="relative">
+        <div className="p-6 border-t border-slate-100 bg-white/80 backdrop-blur-md z-10">
+          <div className="relative group">
             <input
               type="text"
               value={userInput}
               onChange={(e) => setUserInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="E.g., Add a skills section..."
-              className="w-full bg-slate-900/50 border border-slate-700 rounded-xl py-3 pl-4 pr-12 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
+              placeholder="Type your message..."
+              className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-4 pl-6 pr-14 text-[15px] text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#01334c]/20 focus:border-[#01334c] transition-all shadow-inner group-hover:bg-white group-hover:shadow-lg group-hover:shadow-slate-200/50"
             />
 
             <button
               onClick={sendMessage}
-              className="absolute right-2 top-2 p-1.5 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-white transition-colors"
+              disabled={!userInput.trim() || isTyping}
+              className="absolute right-3 top-3 p-2 bg-[#01334c] hover:bg-[#024466] disabled:opacity-50 disabled:hover:bg-[#01334c] rounded-xl text-white transition-all duration-300 shadow-lg shadow-[#01334c]/20 hover:shadow-[#01334c]/40 active:scale-95"
             >
               <ArrowUp className="w-4 h-4" />
             </button>
           </div>
+          <p className="text-center text-[10px] text-slate-400 mt-4 font-medium tracking-wide">
+            AI-generated content may be inaccurate. Check important info.
+          </p>
         </div>
       </aside>
 
       {/* Main Preview Area */}
-      <main className="flex-1 flex flex-col bg-[#0f172a] relative h-full">
+      <main className="flex-1 flex flex-col bg-slate-50/50 relative h-full">
 
-        <div className="h-16 flex-shrink-0 flex items-center justify-between px-6 border-b border-slate-700/50 bg-[#0f172a]/80 backdrop-blur z-30">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 text-slate-400">
-              <File className="w-4 h-4" />
-              <span className="text-xs font-semibold uppercase tracking-wider">Document Preview</span>
+        <div className="h-20 flex-shrink-0 flex items-center justify-between px-8 border-b border-slate-200/60 bg-white/80 backdrop-blur z-30">
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2.5 text-slate-500 bg-slate-100/50 px-3 py-1.5 rounded-lg border border-slate-200/50">
+              <File className="w-4 h-4 text-[#01334c]" />
+              <span className="text-xs font-bold uppercase tracking-wider text-[#01334c]">Preview</span>
             </div>
-            <div className="h-4 w-px bg-slate-700"></div>
-            <span className="text-xs text-slate-500">A4 • Portrait</span>
+            <div className="h-5 w-px bg-slate-200"></div>
+            <span className="text-xs font-medium text-slate-500">A4 Document • Portrait</span>
           </div>
 
           <button
             onClick={downloadPDF}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 text-white text-xs font-medium hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-500/20 active:scale-95"
+            className="flex items-center gap-2.5 px-5 py-2.5 rounded-xl bg-white border border-slate-200 text-[#01334c] text-xs font-bold uppercase tracking-wider hover:bg-[#01334c] hover:text-white hover:border-[#01334c] transition-all duration-300 shadow-sm hover:shadow-lg hover:shadow-[#01334c]/20 active:scale-95"
           >
             {!downloading ? (
               <>
-                <span>Download PDF</span>
-                <Download className="w-3 h-3" />
+                <span>Export PDF</span>
+                <Download className="w-3.5 h-3.5" />
               </>
             ) : (
               <>
-                <span>Generating...</span>
-                <Loader2 className="w-3 h-3 animate-spin" />
+                <span>Processing</span>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
               </>
             )}
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-8 md:p-12 relative bg-[#1e293b] shadow-inner" id="docScrollArea">
+        <div className="flex-1 overflow-y-auto p-10 md:p-16 relative" id="docScrollArea">
 
-          <div className="absolute inset-0 z-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(#ffffff 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
+          {/* Subtle Grid Background */}
+          <div className="absolute inset-0 z-0 opacity-[0.4]" style={{ backgroundImage: 'radial-gradient(#cbd5e1 1px, transparent 1px)', backgroundSize: '32px 32px' }}></div>
 
           <div
             id="printableArea"
-            className={`a4-page relative z-10 transition-all duration-500 ${loadingPreview ? 'blur-[1px] opacity-90' : 'blur-0 opacity-100'}`}
-            dangerouslySetInnerHTML={{ __html: profileContent }}
+            className={`a4-page relative z-10 transition-all duration-700 ease-out transform origin-top ${loadingPreview ? 'blur-sm scale-[0.99] opacity-90' : 'blur-0 scale-100 opacity-100'} shadow-2xl shadow-slate-200`}
+            dangerouslySetInnerHTML={{ __html: profileHtml }}
           >
           </div>
 
-          <div className="h-12"></div>
+          <div className="h-20"></div>
         </div>
       </main>
     </div>
