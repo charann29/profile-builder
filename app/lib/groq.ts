@@ -1,8 +1,14 @@
 import Groq from 'groq-sdk';
 import { ProfileData } from './schema';
 
+const apiKey = (process.env.NEXT_PUBLIC_GROQ_API_KEY || '').trim();
+
+if (!apiKey) {
+    console.error('Groq API Key (NEXT_PUBLIC_GROQ_API_KEY) is missing!');
+}
+
 const groq = new Groq({
-    apiKey: process.env.NEXT_PUBLIC_GROQ_API_KEY || '',
+    apiKey,
     dangerouslyAllowBrowser: true, // Only for demo/prototype, should ideally be backend
 });
 
