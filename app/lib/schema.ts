@@ -28,19 +28,22 @@ export const ProfileSchema = z.object({
   certifications: z.array(z.string()).optional(),
   technicalSkills: z.array(z.string()).optional(),
   achievements: z.array(z.string()).max(5).optional(),
+  superpower: z.string().optional(),
+  knownFor: z.string().optional(),
+  languagesSpoken: z.array(z.string()).optional(),
 
   // Section 2: Social Media
   socialLinks: z.object({
-    linkedin: z.string().url().optional().or(z.literal("")),
-    instagram: z.string().url().optional().or(z.literal("")),
-    twitter: z.string().url().optional().or(z.literal("")),
-    facebook: z.string().url().optional().or(z.literal("")),
-    youtube: z.string().url().optional().or(z.literal("")),
-    website: z.string().url().optional().or(z.literal("")),
-    companyWebsite: z.string().url().optional().or(z.literal("")),
-    calendly: z.string().url().optional().or(z.literal("")),
-    podcast: z.string().url().optional().or(z.literal("")),
-    newsletter: z.string().url().optional().or(z.literal("")),
+    linkedin: z.string().optional().or(z.literal("")),
+    instagram: z.string().optional().or(z.literal("")),
+    twitter: z.string().optional().or(z.literal("")),
+    facebook: z.string().optional().or(z.literal("")),
+    youtube: z.string().optional().or(z.literal("")),
+    website: z.string().optional().or(z.literal("")),
+    companyWebsite: z.string().optional().or(z.literal("")),
+    calendly: z.string().optional().or(z.literal("")),
+    podcast: z.string().optional().or(z.literal("")),
+    newsletter: z.string().optional().or(z.literal("")),
   }).optional(),
 
   // Section 3: Brands & Work Experience
@@ -73,7 +76,7 @@ export const ProfileSchema = z.object({
 
   // Section 4: Impact Created
   professionType: z.string().optional(),
-  impactHeadline: z.string().max(50).optional(),
+  impactHeadline: z.string().max(100).optional(),
   impactStory: z.string().max(1000).optional(),
   professionSpecificImpact: z.record(z.string(), z.any()).optional(),
 
@@ -86,12 +89,12 @@ export const ProfileSchema = z.object({
   })).optional(),
   mediaFeatures: z.array(z.object({
     name: z.string().optional(),
-    url: z.string().url().optional().or(z.literal("")),
+    url: z.string().optional().or(z.literal("")),
   })).optional(),
 
   // Section 6: Contact Details
   contact: z.object({
-    emailPrimary: z.string().email().optional().or(z.literal("")),
+    emailPrimary: z.string().optional().or(z.literal("")),
     emailShow: z.boolean().default(true),
     phonePrimary: z.string().optional(),
     phoneShow: z.boolean().default(true),
@@ -101,6 +104,39 @@ export const ProfileSchema = z.object({
     addressShow: z.boolean().default(true),
     preferredContact: z.string().optional(),
   }).optional(),
+
+  // Additional Suggested Sections
+  speakingTopics: z.array(z.object({
+    title: z.string().optional(),
+    description: z.string().optional(),
+  })).optional(),
+  sessionFormats: z.array(z.string()).optional(),
+  audienceSize: z.string().optional(),
+
+  testimonials: z.array(z.object({
+    quote: z.string().optional(),
+    personName: z.string().optional(),
+    designation: z.string().optional(),
+    company: z.string().optional(),
+  })).optional(),
+
+  personalTouch: z.object({
+    funFact: z.string().optional(),
+    hobbies: z.array(z.string()).optional(),
+    motto: z.string().optional(),
+    outsideWork: z.string().optional(),
+    causesSupported: z.array(z.string()).optional(),
+  }).optional(),
+
+  availability: z.object({
+    newClients: z.string().optional(),
+    speaking: z.string().optional(),
+    mentoring: z.string().optional(),
+    boardPositions: z.string().optional(),
+    collaborations: z.string().optional(),
+  }).optional(),
+
+  videoIntroUrl: z.string().optional(),
 });
 
 export type ProfileData = z.infer<typeof ProfileSchema>;

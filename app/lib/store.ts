@@ -4,50 +4,106 @@ import { ProfileData } from './schema';
 interface Message {
     text: string;
     sender: 'user' | 'bot';
+    suggestedReplies?: string[];
 }
+
+type ConversationPhase = 'greeting' | 'gathering' | 'refining' | 'complete';
 
 interface ProfileState {
     profileData: Partial<ProfileData>;
     messages: Message[];
     isTyping: boolean;
+
+    // Conversation intelligence
+    currentSection: string;
+    sectionProgress: Record<string, number>;
+    conversationPhase: ConversationPhase;
+    detectedProfession: string | null;
+
+    // Actions
     setProfileData: (data: Partial<ProfileData>) => void;
+    mergeProfileData: (data: Partial<ProfileData>) => void;
     updateProfileField: (field: keyof ProfileData, value: unknown) => void;
     addMessage: (message: Message) => void;
     setIsTyping: (isTyping: boolean) => void;
+    setCurrentSection: (section: string) => void;
+    setSectionProgress: (progress: Record<string, number>) => void;
+    setConversationPhase: (phase: ConversationPhase) => void;
+    setDetectedProfession: (profession: string | null) => void;
     resetChat: () => void;
 }
 
-export const useProfileStore = create<ProfileState>((set) => ({
-    profileData: {
-        fullName: '',
-        expertiseAreas: [],
-        topHighlights: [],
-        achievements: [],
-        socialLinks: {
-            linkedin: '',
-        },
-        workExperienceType: 'Multiple',
-        brands: [],
-        contact: {
-            emailPrimary: '',
-            emailShow: true,
-            phoneShow: true,
-            whatsappShow: true,
-            addressShow: true,
-        },
+const INITIAL_PROFILE: Partial<ProfileData> = {
+    fullName: '',
+    expertiseAreas: [],
+    topHighlights: [],
+    achievements: [],
+    socialLinks: {
+        linkedin: '',
     },
+    workExperienceType: 'Multiple',
+    brands: [],
+    contact: {
+        emailPrimary: '',
+        emailShow: true,
+        phoneShow: true,
+        whatsappShow: true,
+        addressShow: true,
+    },
+};
+
+export const useProfileStore = create<ProfileState>((set) => ({
+    profileData: { ...INITIAL_PROFILE },
     messages: [
         {
-            text: "I'm here to craft your professional profile. Share your details, and watch your document come to life on the right.",
+            text: "Hey there! 👋 I'm your profile architect. I help professionals and entrepreneurs build powerful, standout profiles. You can start by telling me a bit about yourself — your name, what you do, and what makes you great at it!",
             sender: 'bot',
+            suggestedReplies: [
+                "Let me introduce myself",
+                "I already imported LinkedIn, let's refine",
+                "What kind of profile can you build?",
+            ],
         },
     ],
     isTyping: false,
 
+    // Conversation intelligence
+    currentSection: 'section_1a',
+    sectionProgress: {},
+    conversationPhase: 'greeting',
+    detectedProfession: null,
+
+    // Actions
     setProfileData: (data) =>
-        set((state) => ({
-            profileData: { ...state.profileData, ...data },
+        set(() => ({
+            profileData: { ...INITIAL_PROFILE, ...data },
         })),
+
+    mergeProfileData: (data) =>
+        set((state) => {
+            const merged = { ...state.profileData };
+
+            for (const [key, value] of Object.entries(data)) {
+                if (value === undefined || value === null) continue;
+
+                const existing = merged[key as keyof ProfileData];
+
+                // Deep merge objects (socialLinks, contact, focusBrand, etc.)
+                if (
+                    typeof value === 'object' &&
+                    !Array.isArray(value) &&
+                    typeof existing === 'object' &&
+                    !Array.isArray(existing) &&
+                    existing !== null
+                ) {
+                    (merged as Record<string, unknown>)[key] = { ...existing, ...value };
+                } else {
+                    (merged as Record<string, unknown>)[key] = value;
+                }
+            }
+
+            return { profileData: merged };
+        }),
 
     updateProfileField: (field, value) =>
         set((state) => ({
@@ -61,5 +117,20 @@ export const useProfileStore = create<ProfileState>((set) => ({
 
     setIsTyping: (isTyping) => set({ isTyping }),
 
-    resetChat: () => set({ messages: [], isTyping: false }),
+    setCurrentSection: (section) => set({ currentSection: section }),
+
+    setSectionProgress: (progress) => set({ sectionProgress: progress }),
+
+    setConversationPhase: (phase) => set({ conversationPhase: phase }),
+
+    setDetectedProfession: (profession) => set({ detectedProfession: profession }),
+
+    resetChat: () => set({
+        messages: [],
+        isTyping: false,
+        currentSection: 'section_1a',
+        sectionProgress: {},
+        conversationPhase: 'greeting',
+        detectedProfession: null,
+    }),
 }));

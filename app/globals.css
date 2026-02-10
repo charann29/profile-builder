@@ -123,16 +123,16 @@
 
 .page {
     width: 210mm;
-    height: 297mm;
-    /* Standard A4 Height */
+    min-height: 297mm;
+    /* Standard A4 Height — use min-height so content can grow */
     background: white;
     padding: 40px;
-    /* box-shadow: 0 0 15px rgba(0, 0, 0, 0.1); */
-    /* Handled by a4-page container */
     position: relative;
     display: flex;
     flex-direction: column;
     font-family: var(--font-poppins), sans-serif;
+    break-after: page;
+    page-break-after: always;
 }
 
 .page * {
@@ -145,7 +145,7 @@
     display: flex;
     flex-direction: column;
     gap: 20px;
-    height: 100%;
+    flex: 1;
 }
 
 .header-container {
@@ -355,8 +355,10 @@
 .brands-logos {
     display: flex;
     align-items: center;
-    gap: 30px;
-    padding-left: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 20px;
+    padding: 0 15px;
 }
 
 .logo-tworks {
@@ -392,7 +394,7 @@
     display: flex;
     flex-direction: column;
     gap: 15px;
-    height: 100%;
+    flex: 1;
 }
 
 .section-box {
@@ -400,6 +402,8 @@
     padding: 20px;
     margin-bottom: 5px;
     position: relative;
+    break-inside: avoid;
+    page-break-inside: avoid;
 }
 
 .section-header {
@@ -519,14 +523,17 @@
 }
 
 .logo-placeholder {
-    height: 40px;
+    height: 50px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: bold;
     color: #555;
-    padding: 5px 10px;
+    padding: 5px 12px;
+    min-width: 70px;
+    max-width: 120px;
+    text-align: center;
 }
 
 .logo-icrisat {
@@ -640,4 +647,43 @@
 
 .animate-slide-up {
     animation: slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Print / PDF export styles */
+@media print {
+    .page {
+        box-shadow: none;
+        break-after: page;
+        page-break-after: always;
+    }
+
+    .page:last-child {
+        break-after: auto;
+        page-break-after: auto;
+    }
+
+    .section-box {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+
+    .header-container {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+
+    .roles-section {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+
+    .brands-section {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+
+    .prompt-box {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
 }

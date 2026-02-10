@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Combined Profile - Abhishek & Nikeelu</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        * {
+            box-sizing: border-box;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+            /* Ensure colors print correctly */
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+            /* Grey background for web view */
+            font-family: 'Poppins', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 20px;
+            padding-bottom: 20px;
+            gap: 20px;
+        }
+
+        /* A4 Paper Dimensions */
+        .page {
+            width: 210mm;
+            height: 297mm;
+            /* Standard A4 Height */
+            background: white;
+            padding: 40px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            /* overflow: hidden; */
+            /* Optional: to ensure content stays within page */
+        }
+
+        /* --- PAGE 1 STYLES --- */
+
+        .page-1-content {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            height: 100%;
+        }
+
+        .header-container {
+            display: flex;
+            gap: 25px;
+            height: 320px;
+            /* Fixed height to match proportion */
+        }
+
+        .profile-photo {
+            flex: 0 0 40%;
+            background: linear-gradient(135deg, #1a237e 0%, #0d47a1 100%);
+            /* Blue backdrop */
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+        .profile-photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .profile-details {
+            flex: 1;
+            background-color: #FFFBF2;
+            /* Light cream bg */
+            border-radius: 12px;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .name {
+            color: #2A3B90;
+            /* Dark Navy */
+            font-size: 32px;
+            font-weight: 700;
+            margin: 0;
+            line-height: 1.2;
+        }
+
+        .title {
+            color: #666;
+            font-size: 16px;
+            font-weight: 400;
+            margin-top: 5px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ffe0b2;
+            padding-bottom: 15px;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .stats-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .stats-list li {
+            color: #2A3B90;
+            font-size: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            font-weight: 500;
+        }
+
+        .stats-list li::before {
+            content: "•";
+            color: #2A3B90;
+            font-size: 20px;
+            margin-right: 10px;
+            line-height: 1;
+        }
+
+        .social-links {
+            margin-top: 25px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #ffe0b2;
+        }
+
+        .social-icon {
+            font-size: 28px;
+            text-decoration: none;
+        }
+
+        .fa-linkedin {
+            color: #0077b5;
+        }
+
+        .fa-instagram {
+            background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .fa-facebook {
+            color: #1877f2;
+        }
+
+        .website {
+            margin-left: auto;
+            color: #2A3B90;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .prompt-box {
+            background-color: #E6F2FF;
+            /* Light blue */
+            border: 1px solid #90CAF9;
+            border-radius: 12px;
+            min-height: auto;
+            /* Allow expansion */
+            height: auto;
+            flex-grow: 1;
+            /* Make this component fill remaining space */
+            /* Approximate height */
+            padding: 20px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .prompt-text {
+            color: #5C7CFA;
+            font-size: 16px;
+            font-weight: 400;
+        }
+
+        .upload-icon-container {
+            align-self: center;
+            background-color: #0091EA;
+            /* Bright Blue */
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            color: white;
+            font-size: 20px;
+        }
+
+        .roles-section {
+            background-color: #F3F9EA;
+            /* Light Mint/Green */
+            border: 1px solid #C5E1A5;
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .section-title {
+            text-align: center;
+            color: #004D40;
+            /* Dark Green text */
+            font-weight: 700;
+            font-size: 18px;
+            text-transform: uppercase;
+            margin-bottom: 25px;
+            margin-top: 5px;
+        }
+
+        .roles-grid {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
+        .role-card {
+            flex: 1;
+            text-align: center;
+        }
+
+        .role-icon {
+            font-size: 32px;
+            color: #2E7D32;
+            /* Green icon */
+            margin-bottom: 10px;
+            height: 50px;
+            /* Fixed height for alignment */
+        }
+
+        .role-title {
+            color: #004D40;
+            font-weight: 700;
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+
+        .role-desc {
+            color: #455A64;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .brands-section {
+            background-color: #FFF0E0;
+            /* Peach/Orange */
+            border: 1px solid #FFCC80;
+            border-radius: 12px;
+            padding: 15px;
+            /* Reduced padding */
+            flex-grow: 0;
+            /* Do not grow, keep it compact */
+        }
+
+        .brands-title {
+            color: #A04000;
+            /* Brownish Orange text */
+            text-align: center;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 18px;
+            margin-bottom: 15px;
+            /* Reduced margin */
+        }
+
+        .brands-logos {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            padding-left: 20px;
+        }
+
+        .logo-tworks {
+            width: 60px;
+            height: 60px;
+            background: #222;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 10px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .logo-startup {
+            width: 60px;
+            height: 60px;
+            background: #D32F2F;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 10px;
+            font-weight: bold;
+            text-align: center;
+            line-height: 1;
+        }
+
+
+        /* --- PAGE 2 STYLES --- */
+
+        .page-2-content {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            height: 100%;
+        }
+
+        .section-box {
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 5px;
+            position: relative;
+        }
+
+        .section-header {
+            text-align: center;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+
+        .impact-section {
+            background-color: #EBF5FB;
+            /* Very light blue */
+            border: 1px solid #AED6F1;
+        }
+
+        .impact-header {
+            color: #2E86C1;
+        }
+
+        .impact-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .impact-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .impact-icon {
+            flex: 0 0 50px;
+            color: #2E86C1;
+            font-size: 24px;
+            text-align: center;
+            padding-top: 5px;
+        }
+
+        .impact-text {
+            color: #34495E;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .highlight-blue {
+            color: #2E86C1;
+            font-weight: 600;
+        }
+
+        .awards-section {
+            background-color: #F9FBE7;
+            /* Light lime/cream */
+            border: 1px solid #DCE775;
+        }
+
+        .awards-header {
+            color: #2E5848;
+            /* Dark Green */
+        }
+
+        .awards-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            position: relative;
+            z-index: 1;
+        }
+
+        .awards-list li {
+            font-size: 13px;
+            color: #333;
+            margin-bottom: 8px;
+            padding-left: 15px;
+            position: relative;
+            line-height: 1.4;
+        }
+
+        .awards-list li::before {
+            content: "•";
+            color: #2E5848;
+            font-weight: bold;
+            position: absolute;
+            left: 0;
+            font-size: 18px;
+            line-height: 0.8;
+        }
+
+        .award-badge-icon {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            font-size: 60px;
+            color: #E0E0E0;
+            /* Grey watermark style */
+            opacity: 0.6;
+            z-index: 0;
+        }
+
+        .bold-green {
+            font-weight: 700;
+            color: #1B5E20;
+        }
+
+        .keynote-section {
+            background-color: white;
+            border: 1px solid #FFCC80;
+        }
+
+        .keynote-header {
+            color: #A84418;
+            /* Burnt Orange */
+        }
+
+        .logos-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            align-items: center;
+            gap: 20px;
+            padding: 10px 0;
+        }
+
+        .logo-placeholder {
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            color: #555;
+            padding: 5px 10px;
+        }
+
+        .logo-icrisat {
+            color: #00695C;
+            font-weight: 800;
+            letter-spacing: -1px;
+        }
+
+        .logo-univ {
+            border-radius: 50%;
+            border: 2px solid #B71C1C;
+            color: #B71C1C;
+            width: 40px;
+            height: 40px;
+            font-size: 8px;
+            text-align: center;
+        }
+
+        .logo-ibs {
+            color: #B71C1C;
+            font-family: serif;
+            font-size: 20px;
+        }
+
+        .logo-jci {
+            color: #0288D1;
+            font-weight: 900;
+            font-size: 22px;
+            font-style: italic;
+        }
+
+        .logo-microsoft {
+            color: #737373;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .microsoft-icon {
+            color: #F25022;
+        }
+
+        .summary-section {
+            background-color: #FFF3E0;
+            /* Light Peach */
+            border: 1px solid #FFCC80;
+            color: #6D4C41;
+            /* Brownish text */
+            font-size: 13px;
+            line-height: 1.6;
+            text-align: justify;
+        }
+
+        .contact-section {
+            background-color: #F3E5F5;
+            /* Light Purple */
+            border: 1px solid #BA68C8;
+            /* Purple border */
+            padding: 15px;
+            margin-top: auto;
+        }
+
+        .contact-grid {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+
+        .contact-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .contact-icon {
+            font-size: 24px;
+            color: #4A148C;
+            /* Dark Purple */
+            margin-bottom: 5px;
+        }
+
+        .contact-text {
+            color: #4A148C;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        @media print {
+            body {
+                background: none;
+                margin: 0;
+                padding: 0;
+                display: block;
+                /* Default block display for print */
+            }
+
+            .page {
+                box-shadow: none;
+                margin: 0;
+                width: 100%;
+                height: 100%;
+                /* Or auto if content flows differently, but fixed height helps if designed for A4 */
+                break-after: page;
+                /* Force page break after each .page */
+                padding: 20px;
+                /* Slight adjustment for print margins if needed */
+            }
+
+            .page:last-child {
+                break-after: auto;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- PAGE 1 -->
+    <div class="page" id="page1">
+        <div class="page-1-content">
+            <div class="header-container">
+                <div class="profile-photo">
+                    <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+                        alt="Abhishek Boddu">
+                </div>
+
+                <div class="profile-details">
+                    <h1 class="name">CA Abhishek Boddu</h1>
+                    <div class="title">Founder & CEO of OnEasy</div>
+
+                    <ul class="stats-list">
+                        <li>Virtual CFRO</li>
+                        <li>Served 50+ brands across 10+ industries</li>
+                        <li>Growth Trainer - GrowthClub</li>
+                    </ul>
+
+                    <div class="social-links">
+                        <a href="#" class="social-icon"><i class="fa-brands fa-linkedin"></i></a>
+                        <a href="#" class="social-icon"><i class="fa-brands fa-instagram"></i></a>
+                        <a href="#" class="social-icon"><i class="fa-brands fa-facebook"></i></a>
+
+                        <a href="http://www.digitalconnect.in" class="website">www.digitalconnect.in</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="prompt-box">
+                <div class="prompt-text">
+                    A seasoned Chartered Accountant and Virtual CFRO, I partner with brands to drive sustainable growth.
+                    As Founder of OnEasy, I combine financial acumen with digital marketing strategies to help startups
+                    scale. My expertise lies in structuring financial models and optimizing cash flows. I am passionate
+                    about brand storytelling and building digital ecosystems that foster customer loyalty, bridging the
+                    gap between financial stability and market expansion.
+                </div>
+            </div>
+
+            <div class="roles-section">
+                <div class="section-title">KEY ROLES AND EXPERTISE</div>
+                <div class="roles-grid">
+                    <div class="role-card">
+                        <div class="role-icon"><i class="fa-solid fa-bullhorn"></i></div>
+                        <div class="role-title">Digital Marketing</div>
+                        <div class="role-desc">Helping Startups and Businesses to scale their digital presence</div>
+                    </div>
+                    <div class="role-card">
+                        <div class="role-icon"><i class="fa-solid fa-chart-line"></i></div>
+                        <div class="role-title">Branding & Consulting</div>
+                        <div class="role-desc">Tailored PR and Branding Strategies to scale business across online and
+                            offline</div>
+                    </div>
+                    <div class="role-card">
+                        <div class="role-icon"><i class="fa-solid fa-share-nodes"></i></div>
+                        <div class="role-title">GTM Strategies</div>
+                        <div class="role-desc">Scaling strategies across industries. Automating Lead Generation</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="brands-section">
+                <div class="brands-title">BRANDS WORKED</div>
+                <div class="brands-logos">
+                    <div class="logo-tworks">T WORKS</div>
+                    <div class="logo-startup">STARTUP<br>utsav</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PAGE 2 -->
+    <div class="page" id="page2">
+        <div class="page-2-content">
+            <div class="section-box impact-section">
+                <div class="section-header impact-header">IMPACT AND OUTREACH</div>
+
+                <div class="impact-item">
+                    <div class="impact-icon"><i class="fa-solid fa-chalkboard-user"></i></div>
+                    <div class="impact-text">
+                        <span class="highlight-blue">Public Speaking & Training:</span> Reached over <span
+                            class="highlight-blue">40,000 individuals</span> through talks, digital marketing, and
+                        literacy programs
+                    </div>
+                </div>
+
+                <div class="impact-item">
+                    <div class="impact-icon"><i class="fa-solid fa-people-group"></i></div>
+                    <div class="impact-text">
+                        <span class="highlight-blue">Manovignanayatra (2022):</span> Traveled across 30 districts in AP
+                        & TS raising awareness about digital marketing and self-employment, Cyber Security <span
+                            class="highlight-blue">(Impacting 50,000+ People)</span>
+                    </div>
+                </div>
+
+                <div class="impact-item">
+                    <div class="impact-icon"><i class="fa-solid fa-bullhorn"></i></div>
+                    <div class="impact-text">
+                        <span class="highlight-blue">Digital Villages Creator:</span> Promoted digital literacy in
+                        Telangana districts (Adilabad, Karimnagar, Yadadri, Rangareddy)
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-box awards-section">
+                <div class="section-header awards-header">AWARDS AND RECOGNITION</div>
+
+                <ul class="awards-list">
+                    <li><span class="bold-green">Pride of Hyderabad 2023 :</span> By Government of Telangana</li>
+                    <li><span class="bold-green">Rashtriya Gaurav Award (2019):</span> By Government of Telangana</li>
+                    <li><span class="bold-green">Swami Vivekananda Young Achiever Award (2019):</span> By CMR Group of
+                        Institutions</li>
+                    <li><span class="bold-green">100K Digithon Champion (2017):</span> By Digital Telangana & TITA</li>
+                    <li><span class="bold-green">Best Leadership Award (2017):</span> By Yuvathirang & UNESCO</li>
+                </ul>
+
+                <div class="award-badge-icon">
+                    <i class="fa-solid fa-award"></i>
+                </div>
+            </div>
+
+            <div class="section-box keynote-section">
+                <div class="section-header keynote-header">KEYNOTE SPEAKER / SESSIONS AT PRESTIGIOUS INSTITUTIONS</div>
+
+                <div class="logos-grid">
+                    <div class="logo-placeholder logo-icrisat"><i class="fa-solid fa-leaf"></i> ICRISAT</div>
+                    <div class="logo-placeholder logo-univ">UNIV HYD</div>
+                    <div class="logo-placeholder"><i class="fa-solid fa-gear" style="color: gold;"></i> PTG</div>
+                    <div class="logo-placeholder" style="color: orange;"><i class="fa-brands fa-envira"></i> CMR</div>
+                    <div class="logo-placeholder logo-ibs">IBS</div>
+                </div>
+
+                <div class="logos-grid">
+                    <div class="logo-placeholder logo-jci">JCI <i class="fa-solid fa-globe"
+                            style="font-size: 16px;"></i> India</div>
+                    <div class="logo-placeholder logo-microsoft">
+                        <i class="fa-brands fa-microsoft"></i> Microsoft
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-box summary-section">
+                With core expertise in Digital Marketing, Business Growth Strategies, Digital PR, Partnerships and
+                Synergies, and GTM Strategies, Nikeelu Gunda remains a leading figure in the startup ecosystem, helping
+                businesses unlock their full potential in the digital era.
+            </div>
+
+            <div class="section-box contact-section">
+                <div class="contact-grid">
+                    <div class="contact-item">
+                        <i class="fa-solid fa-mobile-screen contact-icon"></i>
+                        <div class="contact-text">+91 79893 73839</div>
+                    </div>
+                    <div class="contact-item">
+                        <i class="fa-regular fa-envelope contact-icon"></i>
+                        <div class="contact-text">nikeelu@digitalconnect.in</div>
+                    </div>
+                    <div class="contact-item">
+                        <i class="fa-solid fa-globe contact-icon"></i>
+                        <div class="contact-text">www.digitalconnect.in</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>
