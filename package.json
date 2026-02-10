@@ -12,6 +12,7 @@
     "@ai-sdk/google": "^3.0.23",
     "@ai-sdk/groq": "^3.0.22",
     "@ai-sdk/openai": "^3.0.26",
+    "@ai-sdk/gateway": "latest",
     "@types/html2pdf.js": "^0.10.0",
     "ai": "^6.0.78",
     "groq-sdk": "^0.37.0",

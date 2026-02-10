@@ -2,28 +2,55 @@
 
 import { streamText } from 'ai';
 import { createGroq } from '@ai-sdk/groq';
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
+import { createOpenAI } from '@ai-sdk/openai';
+import { createGatewayProvider } from '@ai-sdk/gateway';
 import { ProfileData } from './schema';
 import { buildSystemPrompt, detectCurrentSection, computeSectionProgress } from './ai-prompt';
 
-const apiKey = (process.env.NEXT_PUBLIC_GROQ_API_KEY || '').trim();
-const modelName = 'llama-3.3-70b-versatile';
+// Configuration from environment variables
+const AI_PROVIDER = process.env.AI_PROVIDER || 'groq';
+const AI_MODEL = process.env.AI_MODEL || ''; // Leave empty to use provider specific defaults
 
-if (!apiKey) {
-    console.error('AI API Key (NEXT_PUBLIC_GROQ_API_KEY) is missing!');
-}
+// Provider-specific names/models
+const VERCEL_MODEL = (process.env.vercel_AI_MODEL || 'gemini-1.5-flash').trim();
+const GROQ_MODEL = 'llama-3.3-70b-versatile';
 
-// Create a custom Groq provider instance with the API key
-const groq = createGroq({
-    apiKey,
+// Provider-specific API keys
+const groqKey = (process.env.NEXT_PUBLIC_GROQ_API_KEY || '').trim();
+const googleKey = (process.env.GOOGLE_GENERATIVE_AI_API_KEY || '').trim();
+const vercelKey = (process.env.vercel_AI_API_KEY || '').trim();
+const openaiKey = (process.env.OPENAI_API_KEY || '').trim();
+
+// Initialize providers
+const groq = createGroq({ apiKey: groqKey });
+const google = createGoogleGenerativeAI({ apiKey: googleKey });
+const openai = createOpenAI({ apiKey: openaiKey });
+const vercelGateway = createGatewayProvider({
+    apiKey: vercelKey,
 });
 
-
-// Helper to ensure model name is correctly formatted for Groq provider
-const getModel = (name: string) => {
-    // If the name comes in with a prefix like 'groq/llama...', strip it for cleanliness,
-    // though the provider might handle it.
-    const cleanName = name.replace(/^groq\//, '');
-    return groq(cleanName || modelName);
+/**
+ * Get the appropriate model based on AI_PROVIDER and AI_MODEL env vars
+ */
+const getModel = () => {
+    switch (AI_PROVIDER.toLowerCase()) {
+        case 'vercel': {
+            const modelName = AI_MODEL || VERCEL_MODEL;
+            // Vercel Gateway expects provider/model format
+            const fullModelName = modelName.includes('/')
+                ? modelName
+                : (modelName.includes('gemini') ? `google/${modelName}` : `openai/${modelName}`);
+            return vercelGateway(fullModelName);
+        }
+        case 'google':
+            return google(AI_MODEL || 'gemini-1.5-flash');
+        case 'openai':
+            return openai(AI_MODEL || 'gpt-4o');
+        case 'groq':
+        default:
+            return groq(AI_MODEL || GROQ_MODEL);
+    }
 };
 
 // ─── LinkedIn Profile Extraction ──────────────────────────────────────────────
@@ -51,13 +78,12 @@ Return ONLY a valid JSON object matching the profile structure. Include only fie
 
     try {
         const result = streamText({
-            model: getModel(modelName),
+            model: getModel(),
             messages: [{ role: 'user', content: prompt }],
         });
 
         const fullText = await result.text;
         if (fullText) {
-            // Cleanup markdown code blocks if present
             const cleanText = fullText.replace(/```json\n?|\n?```/g, '');
             return JSON.parse(cleanText);
         }
@@ -83,12 +109,10 @@ export const getAiChatResponse = async (
     const currentSection = detectCurrentSection(currentProfileData);
     const systemPrompt = buildSystemPrompt(currentProfileData, currentSection);
 
-    // Build proper chat history with roles
     const chatHistory: { role: 'system' | 'user' | 'assistant'; content: string }[] = [
         { role: 'system', content: systemPrompt },
     ];
 
-    // Include last 10 messages for context
     const recentMessages = messages.slice(-10);
     for (const msg of recentMessages) {
         chatHistory.push({
@@ -99,26 +123,22 @@ export const getAiChatResponse = async (
 
     try {
         const result = streamText({
-            model: getModel(modelName),
+            model: getModel(),
             messages: chatHistory as any,
             temperature: 0.7,
         });
 
-        const fullText = await result.text; // Await the full stream
+        const fullText = await result.text;
 
         if (fullText) {
-            // Vercel SDK might return pure text. We need to parse JSON if the prompt asked for it. 
-            // The system prompt DOES ask for JSON.
             const cleanText = fullText.replace(/```json\n?|\n?```/g, '');
             let parsed;
             try {
                 parsed = JSON.parse(cleanText);
             } catch (e) {
-                // If strictly text, just return content
                 return { text: fullText };
             }
 
-            // Compute updated progress
             const progress = computeSectionProgress({
                 ...currentProfileData,
                 ...(parsed.updatedData || {}),
