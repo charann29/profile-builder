@@ -34,22 +34,45 @@ const vercelGateway = createGatewayProvider({
  * Get the appropriate model based on AI_PROVIDER and AI_MODEL env vars
  */
 const getModel = () => {
-    switch (AI_PROVIDER.toLowerCase()) {
-        case 'vercel': {
-            const modelName = AI_MODEL || VERCEL_MODEL;
-            // Vercel Gateway expects provider/model format
-            const fullModelName = modelName.includes('/')
-                ? modelName
-                : (modelName.includes('gemini') ? `google/${modelName}` : `openai/${modelName}`);
-            return vercelGateway(fullModelName);
+    const provider = AI_PROVIDER.toLowerCase();
+    const modelPreference = AI_MODEL || '';
+
+    if (provider === 'vercel') {
+        const baseModel = modelPreference || VERCEL_MODEL;
+        // If the model already specifies a provider (e.g. 'anthropic/claude'), use it directly
+        if (baseModel.includes('/')) {
+            console.log(`[AI] Vercel Gateway | Using specified model: ${baseModel}`);
+            return vercelGateway(baseModel);
         }
+
+        // Otherwise, guess provider prefix
+        let fullModelId = '';
+        if (baseModel.includes('gemini')) {
+            fullModelId = `google-generative-ai/${baseModel}`;
+        } else if (baseModel.includes('claude')) {
+            fullModelId = `anthropic/${baseModel}`;
+        } else if (baseModel.includes('llama')) {
+            fullModelId = `groq/${baseModel}`;
+        } else {
+            fullModelId = `openai/${baseModel}`;
+        }
+
+        console.log(`[AI] Vercel Gateway | Guessed ID: ${fullModelId} for model: ${baseModel}`);
+        return vercelGateway(fullModelId);
+    }
+
+    // Direct provider fallback
+    switch (provider) {
         case 'google':
-            return google(AI_MODEL || 'gemini-1.5-flash');
+            console.log(`[AI] Google Direct | Model: ${modelPreference || 'gemini-1.5-flash'}`);
+            return google(modelPreference || 'gemini-1.5-flash');
         case 'openai':
-            return openai(AI_MODEL || 'gpt-4o');
+            console.log(`[AI] OpenAI Direct | Model: ${modelPreference || 'gpt-4o'}`);
+            return openai(modelPreference || 'gpt-4o');
         case 'groq':
         default:
-            return groq(AI_MODEL || GROQ_MODEL);
+            console.log(`[AI] Groq Direct | Model: ${modelPreference || GROQ_MODEL}`);
+            return groq(modelPreference || GROQ_MODEL);
     }
 };
 
