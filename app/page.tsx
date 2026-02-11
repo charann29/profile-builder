@@ -14,6 +14,7 @@ import {
   XCircle,
   ExternalLink,
   Sparkles,
+  LogOut,
 } from 'lucide-react';
 import { renderProfile } from './lib/default-content';
 import { useProfileStore } from './lib/store';
@@ -79,6 +80,12 @@ export default function Home() {
     if (now - lastActionTimeRef.current < ACTION_COOLDOWN_MS) return true;
     lastActionTimeRef.current = now;
     return false;
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+    window.location.reload();
   };
 
   // Update profile HTML whenever data changes
@@ -512,6 +519,16 @@ export default function Home() {
             <Linkedin className="w-4 h-4" />
             <span className="hidden sm:inline">Import LinkedIn</span>
           </button>
+
+          {user && (
+            <button
+              onClick={handleLogout}
+              className="p-2 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+              title="Sign Out"
+            >
+              <LogOut className="w-5 h-5" />
+            </button>
+          )}
         </div>
 
         {/* Section Progress Pills */}
