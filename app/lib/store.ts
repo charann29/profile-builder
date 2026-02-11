@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { ProfileData } from './schema';
+import type { User } from '@supabase/supabase-js';
 
 interface Message {
     text: string;
@@ -20,6 +21,11 @@ interface ProfileState {
     conversationPhase: ConversationPhase;
     detectedProfession: string | null;
 
+    // Auth
+    user: User | null;
+    showAuthModal: boolean;
+    pendingAction: (() => void) | null;
+
     // Actions
     setProfileData: (data: Partial<ProfileData>) => void;
     mergeProfileData: (data: Partial<ProfileData>) => void;
@@ -31,6 +37,9 @@ interface ProfileState {
     setConversationPhase: (phase: ConversationPhase) => void;
     setDetectedProfession: (profession: string | null) => void;
     resetChat: () => void;
+    setUser: (user: User | null) => void;
+    setShowAuthModal: (show: boolean) => void;
+    setPendingAction: (action: (() => void) | null) => void;
 }
 
 const INITIAL_PROFILE: Partial<ProfileData> = {
@@ -72,6 +81,11 @@ export const useProfileStore = create<ProfileState>((set) => ({
     sectionProgress: {},
     conversationPhase: 'greeting',
     detectedProfession: null,
+
+    // Auth
+    user: null,
+    showAuthModal: false,
+    pendingAction: null,
 
     // Actions
     setProfileData: (data) =>
@@ -133,4 +147,8 @@ export const useProfileStore = create<ProfileState>((set) => ({
         conversationPhase: 'greeting',
         detectedProfession: null,
     }),
+
+    setUser: (user) => set({ user }),
+    setShowAuthModal: (show) => set({ showAuthModal: show }),
+    setPendingAction: (action) => set({ pendingAction: action }),
 }));

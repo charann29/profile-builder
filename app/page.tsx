@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   FileText,
   Bot,
@@ -20,6 +20,8 @@ import { useProfileStore } from './lib/store';
 import { extractProfileFromLinkedIn, getAiChatResponse, polishProfileData } from './lib/groq';
 import { SECTIONS, computeSectionProgress } from './lib/ai-prompt';
 import EditProfileForm from './components/EditProfileForm';
+import AuthModal from './components/AuthModal';
+import { supabase } from './lib/supabase';
 import { ProfileData } from './lib/schema';
 
 export default function Home() {
@@ -36,6 +38,11 @@ export default function Home() {
     setCurrentSection,
     setSectionProgress,
     updateProfileField,
+    user,
+    showAuthModal,
+    setUser,
+    setShowAuthModal,
+    setPendingAction,
   } = useProfileStore();
 
   const [userInput, setUserInput] = useState('');
@@ -46,7 +53,7 @@ export default function Home() {
   // LinkedIn Modal State
   const [showLinkedinModal, setShowLinkedinModal] = useState(true);
   const [linkedinUrl, setLinkedinUrl] = useState('');
-  const [scrapeStatus, setScrapeStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [scrapeStatus, setScrapeStatus] = useState<'idle' | 'loading' | 'success' | 'processing' | 'error'>('idle');
   const [scrapeMessage, setScrapeMessage] = useState('');
 
   // Edit Form State
@@ -55,6 +62,17 @@ export default function Home() {
   const [isPolishing, setIsPolishing] = useState(false);
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
+
+  // Cooldown ref to prevent rapid-fire API calls
+  const lastActionTimeRef = useRef<number>(0);
+  const ACTION_COOLDOWN_MS = 2000; // 2 seconds between actions
+
+  const isOnCooldown = (): boolean => {
+    const now = Date.now();
+    if (now - lastActionTimeRef.current < ACTION_COOLDOWN_MS) return true;
+    lastActionTimeRef.current = now;
+    return false;
+  };
 
   // Update profile HTML whenever data changes
   useEffect(() => {
@@ -78,11 +96,38 @@ export default function Home() {
     }
   }, [messages, isTyping]);
 
+  // ─── Auth listener ─────────────────────────────────────────────────────────
+  useEffect(() => {
+    // Check existing session on mount
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [setUser]);
+
+  // Helper: require auth before an action
+  const requireAuth = useCallback((action: () => void): boolean => {
+    if (!user) {
+      setPendingAction(() => action);
+      setShowAuthModal(true);
+      return false; // not authed
+    }
+    return true; // authed
+  }, [user, setPendingAction, setShowAuthModal]);
+
   const isValidLinkedinUrl = (url: string) => {
     return /^https?:\/\/(www\.)?linkedin\.com\/in\/[\w-]+\/?$/.test(url.trim());
   };
 
   const scrapeLinkedin = async () => {
+    if (!requireAuth(() => scrapeLinkedin())) return;
+    if (isOnCooldown()) return;
+
     if (!isValidLinkedinUrl(linkedinUrl)) {
       setScrapeStatus('error');
       setScrapeMessage('Please enter a valid LinkedIn URL (e.g. https://www.linkedin.com/in/username/)');
@@ -93,7 +138,7 @@ export default function Home() {
     setScrapeMessage('');
 
     try {
-      const res = await fetch('http://localhost:8000/scrape', {
+      const res = await fetch(process.env.NEXT_PUBLIC_SCRAPER_URL || 'http://localhost:8000/scrape', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ linkedin_url: linkedinUrl.trim() }),
@@ -101,17 +146,20 @@ export default function Home() {
 
       if (res.ok) {
         const rawData = await res.json();
-        setScrapeStatus('success');
-        setScrapeMessage('Profile scraped! Processing with AI...');
+        setScrapeStatus('processing');
+        setScrapeMessage('Profile scraped! Analyzing with AI...');
 
         const extractedData = await extractProfileFromLinkedIn(rawData);
         setTempProfileData(extractedData);
+
+        setScrapeStatus('success');
+        setScrapeMessage('All done! Opening editor...');
 
         // Brief delay for success message visibility
         setTimeout(() => {
           setShowLinkedinModal(false);
           setShowEditForm(true);
-        }, 1500);
+        }, 800);
       } else {
         const data = await res.json().catch(() => null);
         setScrapeStatus('error');
@@ -157,6 +205,9 @@ export default function Home() {
   const sendMessage = async (text?: string) => {
     const messageText = text || userInput.trim();
     if (messageText === '' || isTyping) return;
+    if (isOnCooldown()) return;
+
+    if (!requireAuth(() => sendMessage(messageText))) return;
 
     addMessage({ text: messageText, sender: 'user' });
     setUserInput('');
@@ -203,6 +254,7 @@ export default function Home() {
   };
 
   const handleQuickReply = (reply: string) => {
+    if (!requireAuth(() => handleQuickReply(reply))) return;
     sendMessage(reply);
   };
 
@@ -292,9 +344,12 @@ export default function Home() {
                 </div>
               )}
 
-              {scrapeStatus === 'success' && (
+              {(scrapeStatus === 'success' || scrapeStatus === 'processing') && (
                 <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-100 text-emerald-700 text-sm rounded-xl px-4 py-3 animate-fade-in">
-                  <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+                  {scrapeStatus === 'processing'
+                    ? <Loader2 className="w-4 h-4 flex-shrink-0 animate-spin" />
+                    : <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+                  }
                   <span className="font-medium">{scrapeMessage}</span>
                 </div>
               )}
@@ -303,13 +358,18 @@ export default function Home() {
               <div className="space-y-3 pt-1">
                 <button
                   onClick={scrapeLinkedin}
-                  disabled={scrapeStatus === 'loading' || scrapeStatus === 'success' || !linkedinUrl.trim()}
+                  disabled={scrapeStatus === 'loading' || scrapeStatus === 'processing' || scrapeStatus === 'success' || !linkedinUrl.trim()}
                   className="w-full py-3.5 rounded-xl bg-[#01334c] hover:bg-[#024466] disabled:opacity-50 disabled:hover:bg-[#01334c] text-white text-sm font-bold uppercase tracking-wider transition-all duration-300 shadow-lg shadow-[#01334c]/20 hover:shadow-[#01334c]/40 active:scale-[0.98] flex items-center justify-center gap-2.5"
                 >
                   {scrapeStatus === 'loading' ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Processing Profile...</span>
+                      <span>Scraping Profile...</span>
+                    </>
+                  ) : scrapeStatus === 'processing' ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Analyzing with AI...</span>
                     </>
                   ) : scrapeStatus === 'success' ? (
                     <>
@@ -323,6 +383,11 @@ export default function Home() {
 
                 <button
                   onClick={() => {
+                    if (!requireAuth(() => {
+                      setShowLinkedinModal(false);
+                      setTempProfileData({});
+                      setShowEditForm(true);
+                    })) return;
                     setShowLinkedinModal(false);
                     setTempProfileData({});
                     setShowEditForm(true);
@@ -490,6 +555,9 @@ export default function Home() {
           }}
         />
       )}
+
+      {/* Auth Modal */}
+      {showAuthModal && <AuthModal />}
 
       {/* Main Preview Area */}
       <main className="flex-1 flex flex-col bg-slate-50/50 relative h-full">

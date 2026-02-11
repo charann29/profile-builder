@@ -5,7 +5,7 @@ import { createGroq } from '@ai-sdk/groq';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createGatewayProvider } from '@ai-sdk/gateway';
-import { ProfileData } from './schema';
+import { ProfileData, ProfileSchema } from './schema';
 import { buildSystemPrompt, detectCurrentSection, computeSectionProgress } from './ai-prompt';
 
 // Configuration from environment variables
@@ -17,7 +17,7 @@ const VERCEL_MODEL = (process.env.vercel_AI_MODEL || 'gemini-1.5-flash').trim();
 const GROQ_MODEL = 'llama-3.3-70b-versatile';
 
 // Provider-specific API keys
-const groqKey = (process.env.NEXT_PUBLIC_GROQ_API_KEY || '').trim();
+const groqKey = (process.env.GROQ_API_KEY || '').trim();
 const googleKey = (process.env.GOOGLE_GENERATIVE_AI_API_KEY || '').trim();
 const vercelKey = (process.env.vercel_AI_API_KEY || '').trim();
 const openaiKey = (process.env.OPENAI_API_KEY || '').trim();
@@ -107,8 +107,26 @@ Return ONLY a valid JSON object matching the profile structure. Include only fie
 
         const fullText = await result.text;
         if (fullText) {
-            const cleanText = fullText.replace(/```json\n?|\n?```/g, '');
-            return JSON.parse(cleanText);
+            const cleanText = fullText.replace(/```json\n?|\n?```/g, '').trim();
+            let parsed: unknown;
+            try {
+                parsed = JSON.parse(cleanText);
+            } catch {
+                console.error('AI returned invalid JSON for LinkedIn extraction');
+                return {};
+            }
+            // Validate against schema — strip unknown fields, coerce types
+            const validated = ProfileSchema.partial().safeParse(parsed);
+            if (validated.success) {
+                return validated.data;
+            }
+            console.warn('AI LinkedIn data failed schema validation:', validated.error.issues);
+            // Fallback: return raw parse but strip __proto__ for safety
+            if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+                delete (parsed as Record<string, unknown>)['__proto__'];
+                delete (parsed as Record<string, unknown>)['constructor'];
+                return parsed as Partial<ProfileData>;
+            }
         }
     } catch (error) {
         console.error('Error extracting LinkedIn profile:', error);
@@ -149,8 +167,20 @@ Return ONLY the polished JSON object.`;
 
         const fullText = await result.text;
         if (fullText) {
-            const cleanText = fullText.replace(/```json\n?|\n?```/g, '');
-            return JSON.parse(cleanText);
+            const cleanText = fullText.replace(/```json\n?|\n?```/g, '').trim();
+            let parsed: unknown;
+            try {
+                parsed = JSON.parse(cleanText);
+            } catch {
+                console.error('AI returned invalid JSON for polishing');
+                return data;
+            }
+            const validated = ProfileSchema.partial().safeParse(parsed);
+            if (validated.success) {
+                return validated.data;
+            }
+            console.warn('AI polished data failed schema validation:', validated.error.issues);
+            // Fallback to original data
         }
     } catch (error) {
         console.error('Error polishing profile data:', error);
@@ -197,22 +227,41 @@ export const getAiChatResponse = async (
 
         if (fullText) {
             const cleanText = fullText.replace(/```json\n?|\n?```/g, '');
-            let parsed;
+            let parsed: Record<string, unknown>;
             try {
                 parsed = JSON.parse(cleanText);
-            } catch (e) {
+            } catch {
                 return { text: fullText };
             }
 
+            // Validate the text field
+            const responseText = typeof parsed.text === 'string' ? parsed.text : "I didn't quite catch that. Could you try rephrasing?";
+
+            // Validate updatedData against schema if present
+            let validatedUpdate: Partial<ProfileData> | undefined;
+            if (parsed.updatedData && typeof parsed.updatedData === 'object') {
+                const result = ProfileSchema.partial().safeParse(parsed.updatedData);
+                if (result.success) {
+                    validatedUpdate = result.data;
+                } else {
+                    console.warn('AI updatedData failed validation:', result.error.issues);
+                }
+            }
+
+            // Validate suggestedReplies is an array of strings
+            const suggestedReplies = Array.isArray(parsed.suggestedReplies)
+                ? parsed.suggestedReplies.filter((r): r is string => typeof r === 'string').slice(0, 5)
+                : [];
+
             const progress = computeSectionProgress({
                 ...currentProfileData,
-                ...(parsed.updatedData || {}),
+                ...(validatedUpdate || {}),
             });
 
             return {
-                text: parsed.text || "I didn't quite catch that. Could you try rephrasing?",
-                updatedData: parsed.updatedData || undefined,
-                suggestedReplies: parsed.suggestedReplies || [],
+                text: responseText,
+                updatedData: validatedUpdate,
+                suggestedReplies,
                 sectionProgress: progress,
             };
         }

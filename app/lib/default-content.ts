@@ -1,5 +1,40 @@
 import { ProfileData } from './schema';
 
+// ─── Security Utilities ───────────────────────────────────────────────────────
+
+/**
+ * Escapes HTML special characters to prevent XSS attacks.
+ * Must be applied to ALL user-supplied strings before HTML interpolation.
+ */
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/**
+ * Sanitizes a URL to only allow safe protocols.
+ * Blocks javascript:, data:, vbscript: and other dangerous URI schemes.
+ */
+function sanitizeUrl(url: string): string {
+  if (!url || typeof url !== 'string') return '';
+  const trimmed = url.trim();
+  // Only allow http:// and https:// protocols, and protocol-relative //
+  if (/^https?:\/\//i.test(trimmed) || /^\/\//i.test(trimmed)) {
+    return escapeHtml(trimmed);
+  }
+  // Allow bare domains (no protocol) by prepending https://
+  if (/^[a-zA-Z0-9][a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/.test(trimmed)) {
+    return escapeHtml('https://' + trimmed);
+  }
+  return '#'; // Block everything else (javascript:, data:, etc.)
+}
+
+// ─── Icon Maps ────────────────────────────────────────────────────────────────
+
 // Map expertise areas to relevant Font Awesome icons
 const expertiseIconMap: Record<string, string> = {
   'digital marketing': 'fa-solid fa-bullhorn',
@@ -102,6 +137,8 @@ function getIconForImpact(text: string): string {
   return 'fa-solid fa-star';
 }
 
+// ─── Profile Renderer ─────────────────────────────────────────────────────────
+
 export const renderProfile = (data: Partial<ProfileData>) => {
   const {
     fullName = "Your Name",
@@ -131,6 +168,17 @@ export const renderProfile = (data: Partial<ProfileData>) => {
     personalTouch,
   } = data;
 
+  // ── Escape all user-supplied text ──
+  const eName = escapeHtml(fullName);
+  const eTagline = escapeHtml(tagline);
+  const eAboutMe = escapeHtml(aboutMe);
+  const eTitle = escapeHtml(professionalTitle);
+  const eStory = escapeHtml(personalStory30);
+  const sPhoto = sanitizeUrl(profilePhoto);
+  const eImpactHeadline = escapeHtml(impactHeadline);
+  const eSuperpower = escapeHtml(superpower);
+  const eKnownFor = escapeHtml(knownFor);
+
   // Build impact items as structured entries (icon + text pairs)
   const impactItems: { icon: string; html: string }[] = [];
 
@@ -145,21 +193,21 @@ export const renderProfile = (data: Partial<ProfileData>) => {
       lines.forEach(line => {
         impactItems.push({
           icon: getIconForImpact(line),
-          html: line,
+          html: escapeHtml(line),
         });
       });
     } else {
       impactItems.push({
         icon: getIconForImpact(impactStory),
-        html: impactHeadline
-          ? `<span class="highlight-blue">${impactHeadline}:</span> ${impactStory}`
-          : impactStory,
+        html: eImpactHeadline
+          ? `<span class="highlight-blue">${eImpactHeadline}:</span> ${escapeHtml(impactStory)}`
+          : escapeHtml(impactStory),
       });
     }
   } else if (impactHeadline) {
     impactItems.push({
       icon: 'fa-solid fa-star',
-      html: `<span class="highlight-blue">${impactHeadline}</span>`,
+      html: `<span class="highlight-blue">${eImpactHeadline}</span>`,
     });
   }
 
@@ -169,7 +217,7 @@ export const renderProfile = (data: Partial<ProfileData>) => {
       if (value && typeof value === 'string' && value.trim()) {
         impactItems.push({
           icon: getIconForImpact(key + ' ' + value),
-          html: `<span class="highlight-blue">${key}:</span> ${value}`,
+          html: `<span class="highlight-blue">${escapeHtml(key)}:</span> ${escapeHtml(value)}`,
         });
       }
     });
@@ -192,14 +240,14 @@ export const renderProfile = (data: Partial<ProfileData>) => {
       return `
         <div class="role-card">
           <div class="role-icon"><i class="${icon}"></i></div>
-          <div class="role-title">${area}</div>
+          <div class="role-title">${escapeHtml(area)}</div>
         </div>`;
     }).join('')
     : skills.length > 0
       ? skills.slice(0, 3).map(skill => `
         <div class="role-card">
           <div class="role-icon"><i class="${getIconForExpertise(skill)}"></i></div>
-          <div class="role-title">${skill}</div>
+          <div class="role-title">${escapeHtml(skill)}</div>
         </div>`).join('')
       : `<div class="role-card">
           <div class="role-icon"><i class="fa-solid fa-check-circle"></i></div>
@@ -216,71 +264,82 @@ export const renderProfile = (data: Partial<ProfileData>) => {
   const brandsHtml = brandEntries.length > 0
     ? brandEntries.map(b => {
       const companyName = ((b as { company?: string }).company || '').trim();
-      const safeName = companyName.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+      const safeName = escapeHtml(companyName);
       if (b.logo) {
+        const safeLogo = sanitizeUrl(b.logo);
         return `<div class="logo-placeholder" style="padding:0;overflow:hidden;background:#fff;border:1px solid #eee;border-radius:8px;">
-          <img src="${b.logo}" alt="${safeName}" style="height:45px;max-width:110px;object-fit:contain;" onerror="this.style.display='none';this.parentElement.innerHTML='<span style=font-size:11px;color:#555;padding:4px>${safeName}</span>'" />
+          <img src="${safeLogo}" alt="${safeName}" style="height:45px;max-width:110px;object-fit:contain;" onerror="this.style.display='none';this.parentElement.textContent='${safeName}'" />
         </div>`;
       }
-      const displayName = companyName.length > 15 ? companyName.slice(0, 14) + '…' : companyName;
+      const displayName = companyName.length > 15 ? escapeHtml(companyName.slice(0, 14)) + '…' : safeName;
       return `<div class="logo-placeholder" style="background:#fff;border:1px solid #eee;border-radius:8px;font-size:12px;">${displayName}</div>`;
     }).join('')
     : '<div class="logo-placeholder" style="opacity:0.4;font-size:12px;">Your brands will appear here</div>';
 
   // Build summary blurb from profile data
   const summaryParts: string[] = [];
-  if (superpower) summaryParts.push(`Superpower: ${superpower}.`);
-  if (knownFor) summaryParts.push(`Known for: ${knownFor}.`);
+  if (superpower) summaryParts.push(`Superpower: ${eSuperpower}.`);
+  if (knownFor) summaryParts.push(`Known for: ${eKnownFor}.`);
   if (expertiseAreas.length > 0) {
-    summaryParts.push(`With core expertise in ${expertiseAreas.join(', ')}, ${fullName !== 'Your Name' ? fullName.split(' ')[0] : 'this professional'} continues to make an impact in their industry.`);
+    summaryParts.push(`With core expertise in ${expertiseAreas.map(e => escapeHtml(e)).join(', ')}, ${fullName !== 'Your Name' ? escapeHtml(fullName.split(' ')[0]) : 'this professional'} continues to make an impact in their industry.`);
   }
-  if (personalTouch?.motto) summaryParts.push(`"${personalTouch.motto}"`);
+  if (personalTouch?.motto) summaryParts.push(`"${escapeHtml(personalTouch.motto)}"`);
   const summaryText = summaryParts.join(' ');
+
+  // ── Social link helpers (sanitized) ──
+  const sLinkedin = sanitizeUrl(socialLinks.linkedin || '');
+  const sInstagram = sanitizeUrl(socialLinks.instagram || '');
+  const sFacebook = sanitizeUrl(socialLinks.facebook || '');
+  const sTwitter = sanitizeUrl(socialLinks.twitter || '');
+  const sYoutube = sanitizeUrl(socialLinks.youtube || '');
+  const sWebsite = sanitizeUrl(socialLinks.website || '');
+  const sCompanyWebsite = sanitizeUrl(socialLinks.companyWebsite || '');
 
   return `
 <div class="page" id="page1">
   <div class="page-1-content">
     <div class="header-container">
       <div class="profile-photo">
-        <img src="${profilePhoto}" alt="${fullName}" onerror="this.src='https://cdn.mygrid.club/media/eemf6Wctnw89SoWZ1716925946.jpg'">
+        <img src="${sPhoto}" alt="${eName}" onerror="this.src='https://cdn.mygrid.club/media/eemf6Wctnw89SoWZ1716925946.jpg'">
       </div>
 
       <div class="profile-details">
-        <h1 class="name">${fullName}</h1>
-        <div class="title">${professionalTitle || tagline}</div>
+        <h1 class="name">${eName}</h1>
+        <div class="title">${eTitle || eTagline}</div>
 
         <ul class="stats-list">
           ${topHighlights.length > 0
-      ? topHighlights.map(h => `<li>${h}</li>`).join('')
+      ? topHighlights.map(h => `<li>${escapeHtml(h)}</li>`).join('')
       : '<li>Your key highlights will appear here</li>'}
         </ul>
 
         <div class="social-links">
-          ${socialLinks.linkedin ? `<a href="${socialLinks.linkedin}" class="social-icon"><i class="fa-brands fa-linkedin"></i></a>` : ''}
-          ${socialLinks.instagram ? `<a href="${socialLinks.instagram}" class="social-icon"><i class="fa-brands fa-instagram"></i></a>` : ''}
-          ${socialLinks.facebook ? `<a href="${socialLinks.facebook}" class="social-icon"><i class="fa-brands fa-facebook"></i></a>` : ''}
-          ${socialLinks.twitter ? `<a href="${socialLinks.twitter}" class="social-icon"><i class="fa-brands fa-x-twitter"></i></a>` : ''}
-          ${socialLinks.youtube ? `<a href="${socialLinks.youtube}" class="social-icon"><i class="fa-brands fa-youtube"></i></a>` : ''}
-          ${socialLinks.website || socialLinks.companyWebsite
+          ${sLinkedin ? `<a href="${sLinkedin}" class="social-icon" target="_blank" rel="noopener noreferrer"><i class="fa-brands fa-linkedin"></i></a>` : ''}
+          ${sInstagram ? `<a href="${sInstagram}" class="social-icon" target="_blank" rel="noopener noreferrer"><i class="fa-brands fa-instagram"></i></a>` : ''}
+          ${sFacebook ? `<a href="${sFacebook}" class="social-icon" target="_blank" rel="noopener noreferrer"><i class="fa-brands fa-facebook"></i></a>` : ''}
+          ${sTwitter ? `<a href="${sTwitter}" class="social-icon" target="_blank" rel="noopener noreferrer"><i class="fa-brands fa-x-twitter"></i></a>` : ''}
+          ${sYoutube ? `<a href="${sYoutube}" class="social-icon" target="_blank" rel="noopener noreferrer"><i class="fa-brands fa-youtube"></i></a>` : ''}
+          ${sWebsite || sCompanyWebsite
       ? (() => {
-        const url = ((socialLinks.website || socialLinks.companyWebsite) ?? '').replace(/^https?:\/\//, '');
-        const displayUrl = url.length > 30 ? url.slice(0, 27) + '...' : url;
-        return `<a href="${socialLinks.website || socialLinks.companyWebsite}" class="website">${displayUrl}</a>`;
+        const rawUrl = (socialLinks.website || socialLinks.companyWebsite) ?? '';
+        const displayUrl = rawUrl.replace(/^https?:\/\//, '');
+        const truncated = displayUrl.length > 30 ? displayUrl.slice(0, 27) + '...' : displayUrl;
+        return `<a href="${sWebsite || sCompanyWebsite}" class="website" target="_blank" rel="noopener noreferrer">${escapeHtml(truncated)}</a>`;
       })()
       : ''}
         </div>
       </div>
     </div>
 
-    ${personalStory30 ? `
+    ${eStory ? `
     <div class="prompt-box" style="background-color: #FFF8E1; border-color: #FFD54F; flex-grow: 0; padding: 16px 20px;">
       <div style="color: #F57F17; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">✨ Personal Story</div>
-      <div style="color: #5D4037; font-size: 15px; font-weight: 500; font-style: italic; line-height: 1.5;">"${personalStory30}"</div>
+      <div style="color: #5D4037; font-size: 15px; font-weight: 500; font-style: italic; line-height: 1.5;">"${eStory}"</div>
     </div>
     ` : ''}
 
     <div class="prompt-box">
-      <div class="prompt-text">${aboutMe}</div>
+      <div class="prompt-text">${eAboutMe}</div>
     </div>
 
     <div class="roles-section">
@@ -323,14 +382,14 @@ export const renderProfile = (data: Partial<ProfileData>) => {
     <div class="section-box awards-section">
       <div class="section-header awards-header">AWARDS AND RECOGNITION</div>
       <ul class="awards-list">
-        ${awards.slice(0, 5).map(a => `<li><span class="bold-green">${a.title}${a.year ? ` (${a.year})` : ''}:</span> ${a.organization ? `By ${a.organization}` : ''}</li>`).join('')}
+        ${awards.slice(0, 5).map(a => `<li><span class="bold-green">${escapeHtml(a.title || '')}${a.year ? ` (${escapeHtml(a.year)})` : ''}:</span> ${a.organization ? `By ${escapeHtml(a.organization)}` : ''}</li>`).join('')}
       </ul>
       ${hasMediaFeatures ? `
       <div style="margin-top: 12px; padding-top: 10px; border-top: 1px solid #DCE775;">
         <div style="font-size: 11px; font-weight: 700; color: #2E5848; text-transform: uppercase; margin-bottom: 6px;">Media Features</div>
         ${mediaFeatures.map(m => `
           <div style="font-size: 12px; margin-bottom: 4px;">
-            ${m.url ? `<a href="${m.url}" style="color: #2E86C1; text-decoration: none;">${m.name} ↗</a>` : m.name}
+            ${m.url ? `<a href="${sanitizeUrl(m.url)}" style="color: #2E86C1; text-decoration: none;" target="_blank" rel="noopener noreferrer">${escapeHtml(m.name || '')} ↗</a>` : escapeHtml(m.name || '')}
           </div>
         `).join('')}
       </div>
@@ -353,8 +412,8 @@ export const renderProfile = (data: Partial<ProfileData>) => {
       <div class="logos-grid">
         ${speakingTopics.slice(0, 4).map(t => `
           <div class="logo-placeholder" style="flex-direction:column;height:auto;">
-            <div style="font-weight:700;font-size:13px;color:#A84418;">${t.title}</div>
-            ${t.description ? `<div style="font-size:10px;color:#888;margin-top:2px;">${t.description}</div>` : ''}
+            <div style="font-weight:700;font-size:13px;color:#A84418;">${escapeHtml(t.title || '')}</div>
+            ${t.description ? `<div style="font-size:10px;color:#888;margin-top:2px;">${escapeHtml(t.description)}</div>` : ''}
           </div>
         `).join('')}
       </div>
@@ -366,8 +425,8 @@ export const renderProfile = (data: Partial<ProfileData>) => {
       <div class="section-header" style="color: #6A1B9A;">TESTIMONIALS</div>
       ${testimonials.map(t => `
         <div style="margin-bottom: 12px; padding: 10px; background: rgba(255,255,255,0.5); border-radius: 8px;">
-          <div style="font-style: italic; font-size: 13px; color: #4A148C; line-height: 1.5;">"${t.quote}"</div>
-          <div style="font-size: 11px; color: #7B1FA2; margin-top: 6px; font-weight: 600;">— ${t.personName}${t.designation ? `, ${t.designation}` : ''}${t.company ? ` at ${t.company}` : ''}</div>
+          <div style="font-style: italic; font-size: 13px; color: #4A148C; line-height: 1.5;">"${escapeHtml(t.quote || '')}"</div>
+          <div style="font-size: 11px; color: #7B1FA2; margin-top: 6px; font-weight: 600;">— ${escapeHtml(t.personName || '')}${t.designation ? `, ${escapeHtml(t.designation)}` : ''}${t.company ? ` at ${escapeHtml(t.company)}` : ''}</div>
         </div>
       `).join('')}
     </div>
@@ -381,8 +440,8 @@ export const renderProfile = (data: Partial<ProfileData>) => {
           <li style="margin-bottom: 10px; display: flex; align-items: start; gap: 10px;">
             <i class="fa-solid fa-graduation-cap" style="color: #0056b3; margin-top: 4px;"></i>
             <div>
-              <span style="font-weight: bold; display: block;">${e.schoolName}</span>
-              <span style="font-size: 12px; opacity: 0.8; display: block;">${e.degreeName}${e.fieldOfStudy ? ` in ${e.fieldOfStudy}` : ''} ${e.duration ? `(${e.duration})` : ''}</span>
+              <span style="font-weight: bold; display: block;">${escapeHtml(e.schoolName || '')}</span>
+              <span style="font-size: 12px; opacity: 0.8; display: block;">${escapeHtml(e.degreeName || '')}${e.fieldOfStudy ? ` in ${escapeHtml(e.fieldOfStudy)}` : ''} ${e.duration ? `(${escapeHtml(e.duration)})` : ''}</span>
             </div>
           </li>
         `).join('')}
@@ -396,7 +455,7 @@ export const renderProfile = (data: Partial<ProfileData>) => {
       <div style="display: flex; flex-wrap: wrap; gap: 8px;">
         ${certifications.map(cert => `
           <span style="background: #C8E6C9; padding: 5px 12px; border-radius: 12px; font-size: 12px; color: #1B5E20; font-weight: 500;">
-            <i class="fa-solid fa-certificate" style="margin-right: 4px;"></i>${cert}
+            <i class="fa-solid fa-certificate" style="margin-right: 4px;"></i>${escapeHtml(cert)}
           </span>
         `).join('')}
       </div>
@@ -405,10 +464,10 @@ export const renderProfile = (data: Partial<ProfileData>) => {
 
     ${hasSkills ? `
     <div class="section-box" style="background-color: #f7f7f7; border: 1px solid #ddd; padding: 20px;">
-      <div class="section-header" style="color: #333;">SKILLS & COMPETENCIES</div>
+      <div class="section-header" style="color: #333;">SKILLS &amp; COMPETENCIES</div>
       <div style="display: flex; flex-wrap: wrap; gap: 8px;">
         ${skills.slice(0, 15).map(skill => `
-          <span style="background: #eee; padding: 4px 10px; border-radius: 12px; font-size: 11px;">${skill}</span>
+          <span style="background: #eee; padding: 4px 10px; border-radius: 12px; font-size: 11px;">${escapeHtml(skill)}</span>
         `).join('')}
       </div>
     </div>
@@ -417,11 +476,11 @@ export const renderProfile = (data: Partial<ProfileData>) => {
     ${hasPersonalTouch ? `
     <div class="section-box" style="background-color: #E0F7FA; border: 1px solid #80DEEA; padding: 20px;">
       <div class="section-header" style="color: #00695C;">PERSONAL TOUCH</div>
-      ${personalTouch?.motto ? `<div style="font-style:italic; font-size:14px; color:#004D40; text-align:center; margin-bottom:8px;">"${personalTouch.motto}"</div>` : ''}
-      ${personalTouch?.funFact ? `<div style="font-size:12px; color:#00695C; margin-bottom:4px;">🎯 Fun Fact: ${personalTouch.funFact}</div>` : ''}
+      ${personalTouch?.motto ? `<div style="font-style:italic; font-size:14px; color:#004D40; text-align:center; margin-bottom:8px;">"${escapeHtml(personalTouch.motto)}"</div>` : ''}
+      ${personalTouch?.funFact ? `<div style="font-size:12px; color:#00695C; margin-bottom:4px;">🎯 Fun Fact: ${escapeHtml(personalTouch.funFact)}</div>` : ''}
       ${personalTouch?.hobbies && personalTouch.hobbies.length > 0 ? `
         <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:6px;">
-          ${personalTouch.hobbies.map(h => `<span style="background:#B2EBF2; padding:3px 10px; border-radius:10px; font-size:11px; color:#004D40;">${h}</span>`).join('')}
+          ${personalTouch.hobbies.map(h => `<span style="background:#B2EBF2; padding:3px 10px; border-radius:10px; font-size:11px; color:#004D40;">${escapeHtml(h)}</span>`).join('')}
         </div>
       ` : ''}
     </div>
@@ -437,15 +496,15 @@ export const renderProfile = (data: Partial<ProfileData>) => {
       <div class="contact-grid">
         <div class="contact-item">
           <i class="fa-solid fa-mobile-screen contact-icon"></i>
-          <div class="contact-text">${contact.phonePrimary || 'N/A'}</div>
+          <div class="contact-text">${escapeHtml(contact.phonePrimary || 'N/A')}</div>
         </div>
         <div class="contact-item">
           <i class="fa-regular fa-envelope contact-icon"></i>
-          <div class="contact-text">${contact.emailPrimary || 'N/A'}</div>
+          <div class="contact-text">${escapeHtml(contact.emailPrimary || 'N/A')}</div>
         </div>
         <div class="contact-item">
           <i class="fa-solid fa-globe contact-icon"></i>
-          <div class="contact-text">${socialLinks.website || socialLinks.linkedin || 'N/A'}</div>
+          <div class="contact-text">${escapeHtml(socialLinks.website || socialLinks.linkedin || 'N/A')}</div>
         </div>
       </div>
     </div>
