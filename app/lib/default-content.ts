@@ -514,5 +514,5 @@ export const renderProfile = (data: Partial<ProfileData>) => {
 
   </div>
 </div>
-`;
+`.trim();
 };

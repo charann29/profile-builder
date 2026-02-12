@@ -109,13 +109,11 @@
 /* A4 Paper Dimensions */
 .a4-page {
     width: 210mm;
-    min-height: 297mm;
     background: white;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
     margin: 0 auto;
     padding: 0;
-    /* Let content handle padding or use what index.html had */
     color: #1a202c;
+    overflow: visible;
 }
 
 /* Styles specifically for the content from index.html */
@@ -123,16 +121,26 @@
 
 .page {
     width: 210mm;
-    min-height: 297mm;
-    /* Standard A4 Height — use min-height so content can grow */
+    height: 296.8mm;
+    /* Safety margin */
     background: white;
     padding: 40px;
     position: relative;
     display: flex;
     flex-direction: column;
     font-family: var(--font-poppins), sans-serif;
-    break-after: page;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.page:not(:last-child) {
     page-break-after: always;
+    break-after: page;
+}
+
+.no-shadow,
+.no-shadow * {
+    box-shadow: none !important;
 }
 
 .page * {
@@ -407,6 +415,7 @@
     position: relative;
     break-inside: avoid;
     page-break-inside: avoid;
+    box-decoration-break: clone;
 }
 
 .section-header {
@@ -755,8 +764,6 @@
 @media print {
     .page {
         box-shadow: none;
-        break-after: page;
-        page-break-after: always;
     }
 
     .page:last-child {
@@ -779,13 +786,15 @@
         page-break-inside: avoid;
     }
 
-    .brands-section {
+    .brands-section,
+    .prompt-box {
         break-inside: avoid;
         page-break-inside: avoid;
     }
 
-    .prompt-box {
-        break-inside: avoid;
-        page-break-inside: avoid;
+    /* Suppress any browser-added headers/footers */
+    @page {
+        margin: 0;
+        size: auto;
     }
 }

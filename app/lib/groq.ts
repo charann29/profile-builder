@@ -86,7 +86,9 @@ CRITICAL RULES — follow these EXACTLY:
 - "fullName": Display name. MAX 30 characters. Use the name as-is, do NOT modify.
 - "tagline": LinkedIn headline. MAX 70 characters. Make it magnetic — should make someone stop scrolling.
   If headline is generic (e.g., "Open to opportunities"), rewrite using their actual role + impact.
-- "profilePhoto": Extract pictureUrl if available. If missing, leave empty — never invent a URL.
+- "profilePhoto": Extract the primary profile picture URL. 
+  EXTRACTION LOGIC — **EXTREMELY AGGRESSIVE**: Scan the ENTIRE source JSON for any field containing a URL. Prioritize URLs found in keys like "pictureUrl", "profile_pic", "image_url", "photo_url", "profile_image", or "avatar". 
+  If multiple URLs exist, pick the highest resolution one. If missing, leave empty — never invent a URL.
 - "topHighlights": EXACTLY 3 key achievement lines. MAX 35 characters each. These are HOOKS.
   EXTRACTION LOGIC — scan the entire profile for:
     • Numbers and metrics (10,000+, 500+, 15 years, ₹50Cr)
@@ -102,8 +104,8 @@ CRITICAL RULES — follow these EXACTLY:
   Apply the "SO WHAT?" test — every sentence must answer "Why should someone care?"
   If summary is too long, condense. If too short or missing, synthesize from positions + skills.
   Cover: past experience, present role, key companies, what they're known for.
-- "personalStory30": One powerful line (max 30 words) about their journey. Elevator pitch.
-  If not explicitly in the profile, craft one from their career trajectory.
+- "personalStory30": One powerful line (max 30 words) about their journey. This is an elevator pitch.
+  RECOVERY LOGIC: If not explicitly found, you MUST craft a compelling narrative based on their career trajectory (e.g., "From [early role] to [current achievement] — dedicated to [core mission]").
 - "expertiseAreas": Up to 5 core areas. MAX 3 words each (e.g., "Finance Strategy", "Business Training").
   Extract from LinkedIn skills, headline, and summary. Prefer specific over generic.
   "Business Consulting" is weak → "Growth Strategy Consulting" is better.
@@ -205,7 +207,7 @@ POLISHING PRINCIPLES:
 STRICT CHARACTER LIMITS (NEVER exceed):
 - "fullName": MAX 30 characters
 - "tagline": MAX 70 characters. Must be magnetic — should make someone stop scrolling.
-- "topHighlights": EXACTLY 3 lines, MAX 35 characters each. These are HOOKS — first thing people see.
+- "topHighlights": EXACTLY 3 lines, MAX 30 characters each. These are HOOKS — first thing people see.
   Must include numbers/metrics where possible. Weak: "Business Expert" → Strong: "Scaled 3 Companies to ₹50Cr+"
 - "professionalTitle": MAX 35 characters
 - "expertiseAreas": MAX 3 words per area, up to 5 areas. Be specific, not generic.
@@ -226,6 +228,7 @@ EDGE CASES:
 - If a field is empty/missing, leave it as-is — don't fill it with generic content.
 - Handle positions with missing descriptions gracefully — polish only what exists.
 - Ensure all arrays maintain their original length (don't add or remove items).
+- **STRICT REQUIREMENT**: Return ALL fields present in the input JSON, even if they were not modified or polished. NEVER drop fields like "profilePhoto", "socialLinks", or "contact".
 
 Input Data:
 ${JSON.stringify(data, null, 2)}

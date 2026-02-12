@@ -253,7 +253,11 @@ export default function Home() {
     try {
       // Polish the data with AI before saving
       const polishedData = await polishProfileData(editedData);
-      setProfileData(polishedData);
+
+      // Merge polished data OVER edited data to ensure we don't lose fields like profilePhoto 
+      // if the AI omits them during polishing.
+      const finalData = { ...editedData, ...polishedData };
+      setProfileData(finalData);
       setShowEditForm(false);
 
       // Launch guided review walkthrough instead of going straight to chat
@@ -347,25 +351,37 @@ export default function Home() {
         return;
       }
 
-      const html2pdf = (await import('html2pdf.js')).default;
+      // Ensure fonts are loaded before capturing
+      await document.fonts.ready;
 
-      const opt = {
-        margin: 0,
-        filename: `${profileData.fullName || 'my'}-profile.pdf`,
-        image: { type: 'jpeg' as const, quality: 0.98 },
-        html2canvas: {
-          scale: 2,
-          useCORS: true,
-          allowTaint: true,
-          letterRendering: true,
-        },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
-        pagebreak: { mode: ['css', 'legacy'], avoid: ['.section-box', '.header-container', '.roles-section', '.brands-section', '.prompt-box', '.contact-section'] },
-      };
+      // Suppress shadows and ensure clean layout for capture
+      element.classList.add('no-shadow');
 
-      html2pdf().set(opt).from(element).save().then(() => {
+      try {
+        const html2pdf = (await import('html2pdf.js')).default;
+        const opt = {
+          margin: 0,
+          filename: `${profileData.fullName || 'my'}-profile.pdf`,
+          image: { type: 'jpeg' as const, quality: 0.98 },
+          html2canvas: {
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+            letterRendering: true,
+            scrollY: 0,
+            scrollX: 0,
+          },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
+          pagebreak: { mode: 'css' },
+        };
+
+        await html2pdf().set(opt).from(element).save();
+      } catch (error) {
+        console.error('PDF Download Error:', error);
+      } finally {
+        element.classList.remove('no-shadow');
         setDownloading(false);
-      });
+      }
     }
   };
 

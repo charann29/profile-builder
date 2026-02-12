@@ -142,6 +142,16 @@ export default function EditProfileForm({ initialData, onSave, onCancel, loading
                                         className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#01334c]/10 focus:border-[#01334c] outline-none transition-all"
                                     />
                                 </div>
+                                <div className="space-y-2 col-span-2 md:col-span-1">
+                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Profile Photo URL</label>
+                                    <input
+                                        type="text"
+                                        value={formData.profilePhoto || ''}
+                                        onChange={(e) => handleInputChange('profilePhoto', e.target.value)}
+                                        placeholder="https://example.com/photo.jpg"
+                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#01334c]/10 focus:border-[#01334c] outline-none transition-all"
+                                    />
+                                </div>
                             </div>
                             <div className="space-y-2">
                                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Tagline</label>
@@ -150,6 +160,15 @@ export default function EditProfileForm({ initialData, onSave, onCancel, loading
                                     value={formData.tagline || ''}
                                     onChange={(e) => handleInputChange('tagline', e.target.value)}
                                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#01334c]/10 focus:border-[#01334c] outline-none transition-all"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Personal Story (One Line / 30 Words)</label>
+                                <textarea
+                                    value={formData.personalStory30 || ''}
+                                    onChange={(e) => handleInputChange('personalStory30', e.target.value)}
+                                    rows={2}
+                                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#01334c]/10 focus:border-[#01334c] outline-none transition-all resize-none"
                                 />
                             </div>
                             <div className="space-y-2">
