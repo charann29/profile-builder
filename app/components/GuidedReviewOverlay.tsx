@@ -428,8 +428,6 @@ export default function GuidedReviewOverlay({
                             <textarea
                                 value={(getFieldValue('tagline') as string) || ''}
                                 onChange={(e) => setFieldValue('tagline', e.target.value)}
-                                value={(getFieldValue('tagline') as string) || ''}
-                                onChange={(e) => setFieldValue('tagline', e.target.value)}
                                 placeholder="Your magnetic headline"
                                 className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:border-[#01334c] focus:bg-white outline-none transition-all resize-none"
                                 rows={2}
@@ -441,7 +439,6 @@ export default function GuidedReviewOverlay({
                                 <div key={i} className="flex items-center gap-2">
                                     <input
                                         type="text"
-                                        value={h}
                                         value={h}
                                         onChange={(e) => {
                                             const highlights = [...((getFieldValue('topHighlights') as string[]) || [])];
