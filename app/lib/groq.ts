@@ -307,7 +307,8 @@ RULE: Never modify contact details — just ensure formatting is clean. Don't in
 // ── Enhance a specific profile section with AI ────────────────────────────────
 export const enhanceProfileSection = async (
     sectionId: string,
-    profileData: Partial<ProfileData>
+    profileData: Partial<ProfileData>,
+    instructions?: string
 ): Promise<Partial<ProfileData>> => {
     const guidance = SECTION_GUIDANCE[sectionId] || '';
 
@@ -318,6 +319,9 @@ ${guidance}
 
 FULL PROFILE DATA (for context, do NOT modify fields outside this section):
 ${JSON.stringify(profileData, null, 2)}
+
+${instructions ? `USER INSTRUCTIONS / FEEDBACK:
+"${instructions}"` : ''}
 
 RULES:
 1. Return a JSON object with ONLY the fields that belong to this section, enhanced.
