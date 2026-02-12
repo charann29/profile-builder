@@ -59,6 +59,7 @@ interface ProfileState {
 const INITIAL_PROFILE: Partial<ProfileData> = {
     fullName: '',
     expertiseAreas: [],
+    expertiseDescriptions: [],
     topHighlights: [],
     achievements: [],
     socialLinks: {

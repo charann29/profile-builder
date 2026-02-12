@@ -25,6 +25,7 @@ export const ProfileSchema = z.object({
   storyType: z.enum(["Rise", "Pivot", "Impact", "Mission"]).optional(),
   professionalTitle: z.string().optional(),
   expertiseAreas: z.array(z.string()).max(5).optional(),
+  expertiseDescriptions: z.array(z.string()).max(5).optional(),
   certifications: z.array(z.string()).optional(),
   technicalSkills: z.array(z.string()).optional(),
   achievements: z.array(z.string()).max(5).optional(),

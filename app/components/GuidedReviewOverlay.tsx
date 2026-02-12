@@ -6,14 +6,19 @@ import {
     Check,
     ChevronRight,
     ChevronLeft,
+    ChevronDown,
+    ChevronUp,
     SkipForward,
     Pencil,
     Linkedin,
     Plus,
     X,
     Trash2,
+    Sparkles,
+    Loader2,
 } from 'lucide-react';
 import { ProfileData } from '../lib/schema';
+import { enhanceProfileSection } from '../lib/groq';
 
 // ────────────────────────────────────────────────────────────────────────────────
 // Section configuration
@@ -28,6 +33,9 @@ interface ReviewSection {
     scrollSelector?: string;
     fields: (keyof ProfileData)[];
     hasData: (data: Partial<ProfileData>) => boolean;
+    guidance: string;
+    tips: string[];
+    examples?: string[];
 }
 
 const REVIEW_SECTIONS: ReviewSection[] = [
@@ -37,8 +45,19 @@ const REVIEW_SECTIONS: ReviewSection[] = [
         description: "Here's how your name and title will appear on your profile.",
         emptyPrompt: "We didn't find your name or title on LinkedIn. Add them now?",
         selector: '.header-container',
-        fields: ['fullName', 'professionalTitle', 'topHighlights'],
-        hasData: (d) => !!(d.fullName || d.professionalTitle),
+        fields: ['fullName', 'professionalTitle', 'topHighlights', 'tagline'],
+        hasData: (d) => !!(d.fullName || d.professionalTitle || d.tagline),
+        guidance: 'This is the first thing people see — your name, title, and 3 standout highlights. These must hook the reader instantly.',
+        tips: [
+            'Highlights should include numbers & impact (e.g., "Trained 15,000+ Professionals")',
+            'Professional title = qualifications (CA, MBA, CFA)',
+            'Use power verbs: Led, Built, Scaled, Pioneered',
+        ],
+        examples: [
+            '"Trained 15,000+ Business Owners"',
+            '"Virtual CFO | Startup Strategist"',
+            '"Helped 500+ Startups with Compliance"',
+        ],
     },
     {
         id: 'story',
@@ -47,7 +66,18 @@ const REVIEW_SECTIONS: ReviewSection[] = [
         emptyPrompt: "No about section found. Want to write a quick intro?",
         selector: '.prompt-box',
         fields: ['aboutMe', 'personalStory30'],
-        hasData: (d) => !!(d.aboutMe && d.aboutMe.length > 20),
+        hasData: (d) => !!((d.aboutMe && d.aboutMe.length > 20) || d.personalStory30),
+        guidance: 'Your About Me is 3-4 powerful sentences about your journey. The Personal Story is a single 30-word elevator pitch.',
+        tips: [
+            'Apply the "So What?" test — every sentence must answer why someone should care',
+            'Personal Story = one powerful line about your journey',
+            'Match your tone: formal for CAs/lawyers, bold for entrepreneurs',
+        ],
+        examples: [
+            '"From son of a farmer to the CEO of a 50-crore company"',
+            '"Started with ₹10,000 savings, now helping 1000+ businesses"',
+            '"Left a cushy corporate job to follow my passion"',
+        ],
     },
     {
         id: 'expertise',
@@ -55,8 +85,14 @@ const REVIEW_SECTIONS: ReviewSection[] = [
         description: 'These are the key areas of expertise we identified.',
         emptyPrompt: 'No expertise areas found. Add your core skills?',
         selector: '.roles-section',
-        fields: ['expertiseAreas'],
+        fields: ['expertiseAreas', 'expertiseDescriptions'],
         hasData: (d) => !!(d.expertiseAreas && d.expertiseAreas.length > 0),
+        guidance: 'Up to 5 core expertise areas, each 3 words max. These define what you\'re known for professionally.',
+        tips: [
+            'Be specific: "Growth Strategy" beats "Business Consulting"',
+            'Use industry keywords that clients search for',
+            'Max 5 areas — quality over quantity',
+        ],
     },
     {
         id: 'career',
@@ -66,6 +102,12 @@ const REVIEW_SECTIONS: ReviewSection[] = [
         selector: '.brands-section',
         fields: ['positions'],
         hasData: (d) => !!(d.positions && d.positions.length > 0),
+        guidance: 'Showcase the brands and companies you\'ve worked with — your roles, durations, and key contributions.',
+        tips: [
+            'Lead with your most impressive role',
+            'Include company name, title, and duration',
+            'Up to 10 brands — focus on the ones that build credibility',
+        ],
     },
     {
         id: 'links',
@@ -75,7 +117,13 @@ const REVIEW_SECTIONS: ReviewSection[] = [
         selector: '.social-links',
         scrollSelector: '.header-container',
         fields: ['socialLinks'],
-        hasData: (d) => !!(d.socialLinks?.linkedin || d.socialLinks?.website || d.socialLinks?.instagram),
+        hasData: (d) => !!(d.socialLinks?.linkedin || d.socialLinks?.website || d.socialLinks?.instagram || d.socialLinks?.twitter || d.socialLinks?.youtube || d.socialLinks?.facebook || d.socialLinks?.companyWebsite),
+        guidance: 'Social links verify your professional presence. LinkedIn is the most important — add your website and other platforms too.',
+        tips: [
+            'LinkedIn is primary and strongly recommended',
+            'A personal website adds professional credibility',
+            'Instagram, YouTube, and podcasts showcase your personal brand',
+        ],
     },
     {
         id: 'contact',
@@ -85,6 +133,11 @@ const REVIEW_SECTIONS: ReviewSection[] = [
         selector: '.contact-section',
         fields: ['contact'],
         hasData: (d) => !!(d.contact?.emailPrimary || d.contact?.phonePrimary),
+        guidance: 'This is how people will reach out to you directly — your professional email and phone number.',
+        tips: [
+            'Use a professional email (avoid generic Gmail if possible)',
+            'Double-check for typos — this is your direct contact',
+        ],
     },
 ];
 
@@ -120,6 +173,11 @@ export default function GuidedReviewOverlay({
     const [mounted, setMounted] = useState(false);
     const [dragOffset, setDragOffset] = useState<{ x: number; y: number } | null>(null);
     const [cardKey, setCardKey] = useState(0);
+    const [showGuidance, setShowGuidance] = useState(false);
+    const [isEnhancing, setIsEnhancing] = useState(false);
+    const [aiSuggestion, setAiSuggestion] = useState<Partial<ProfileData> | null>(null);
+    const [canScrollMore, setCanScrollMore] = useState(false);
+    const cardBodyRef = useRef<HTMLDivElement>(null);
     const navDebounceRef = useRef(false);
     const rafRef = useRef<number>(0);
     const isDraggingRef = useRef(false);
@@ -128,6 +186,19 @@ export default function GuidedReviewOverlay({
     const section = REVIEW_SECTIONS[currentStep];
     const hasData = section.hasData(profileData);
     const totalSteps = REVIEW_SECTIONS.length;
+
+    // ── Detect scrollable content & show indicator ──────────────────────────
+    const checkScroll = useCallback(() => {
+        const el = cardBodyRef.current;
+        if (!el) return;
+        const hasMore = el.scrollHeight - el.scrollTop - el.clientHeight > 12;
+        setCanScrollMore(hasMore);
+    }, []);
+
+    useEffect(() => {
+        // Re-check scroll whenever step or editing state changes
+        setTimeout(checkScroll, 100);
+    }, [currentStep, isEditing, showGuidance, aiSuggestion, checkScroll]);
 
     // Ensure we only render portal on client
     useEffect(() => { setMounted(true); }, []);
@@ -183,6 +254,9 @@ export default function GuidedReviewOverlay({
         setIsEditing(false);
         setLocalEdits({});
         setDragOffset(null);
+        setAiSuggestion(null);
+        setShowGuidance(false);
+        setCanScrollMore(false);
 
         // 1. Briefly hide the highlight (opacity fade-out via CSS transition)
         setHighlightVisible(false);
@@ -367,19 +441,30 @@ export default function GuidedReviewOverlay({
                             />
                         </div>
                         <div className="space-y-1.5">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tagline / Headline</label>
+                            <input
+                                type="text"
+                                value={(getFieldValue('tagline') as string) || ''}
+                                onChange={(e) => setFieldValue('tagline', e.target.value)}
+                                maxLength={70}
+                                placeholder="Your magnetic headline (max 70 chars)"
+                                className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:border-[#01334c] outline-none transition-all"
+                            />
+                        </div>
+                        <div className="space-y-1.5">
                             <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Top Highlights</label>
                             {((getFieldValue('topHighlights') as string[]) || []).map((h, i) => (
                                 <div key={i} className="flex items-center gap-2">
                                     <input
                                         type="text"
                                         value={h}
-                                        maxLength={45}
+                                        maxLength={35}
                                         onChange={(e) => {
                                             const highlights = [...((getFieldValue('topHighlights') as string[]) || [])];
-                                            highlights[i] = e.target.value.slice(0, 45);
+                                            highlights[i] = e.target.value.slice(0, 35);
                                             setFieldValue('topHighlights', highlights);
                                         }}
-                                        placeholder="Max 45 characters"
+                                        placeholder="Max 35 characters"
                                         className="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:border-[#01334c] outline-none"
                                     />
                                     <button
@@ -438,9 +523,22 @@ export default function GuidedReviewOverlay({
                 return (
                     <div className="space-y-3 animate-fade-in-up">
                         <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Expertise Areas</label>
-                        <div className="flex flex-wrap gap-2">
+                        <div className="space-y-2.5">
                             {((getFieldValue('expertiseAreas') as string[]) || []).map((area, i) => (
-                                <div key={i} className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 group">
+                                <div key={i} className="bg-white border border-slate-200 rounded-xl p-3 group relative">
+                                    <button
+                                        onClick={() => {
+                                            const areas = [...((getFieldValue('expertiseAreas') as string[]) || [])];
+                                            const descs = [...((getFieldValue('expertiseDescriptions') as string[]) || [])];
+                                            areas.splice(i, 1);
+                                            descs.splice(i, 1);
+                                            setFieldValue('expertiseAreas', areas);
+                                            setFieldValue('expertiseDescriptions', descs);
+                                        }}
+                                        className="absolute top-2 right-2 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    >
+                                        <X className="w-3 h-3" />
+                                    </button>
                                     <input
                                         type="text"
                                         value={area}
@@ -449,19 +547,24 @@ export default function GuidedReviewOverlay({
                                             areas[i] = e.target.value;
                                             setFieldValue('expertiseAreas', areas);
                                         }}
-                                        className="bg-transparent border-none outline-none text-sm w-28 focus:w-40 transition-all"
+                                        placeholder="Role title (e.g. Digital Marketing)"
+                                        className="w-full bg-transparent border-none outline-none text-sm font-medium text-[#01334c]"
                                         autoFocus={i === 0}
                                     />
-                                    <button
-                                        onClick={() => {
-                                            const areas = [...((getFieldValue('expertiseAreas') as string[]) || [])];
-                                            areas.splice(i, 1);
-                                            setFieldValue('expertiseAreas', areas);
+                                    <input
+                                        type="text"
+                                        value={((getFieldValue('expertiseDescriptions') as string[]) || [])[i] || ''}
+                                        maxLength={35}
+                                        onChange={(e) => {
+                                            const descs = [...((getFieldValue('expertiseDescriptions') as string[]) || [])];
+                                            // Ensure array is long enough
+                                            while (descs.length <= i) descs.push('');
+                                            descs[i] = e.target.value.slice(0, 35);
+                                            setFieldValue('expertiseDescriptions', descs);
                                         }}
-                                        className="text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                                    >
-                                        <X className="w-3 h-3" />
-                                    </button>
+                                        placeholder="Short description (max 35 chars)"
+                                        className="w-full bg-transparent border-none outline-none text-xs text-slate-500 mt-1"
+                                    />
                                 </div>
                             ))}
                         </div>
@@ -469,7 +572,9 @@ export default function GuidedReviewOverlay({
                             <button
                                 onClick={() => {
                                     const areas = [...((getFieldValue('expertiseAreas') as string[]) || []), ''];
+                                    const descs = [...((getFieldValue('expertiseDescriptions') as string[]) || []), ''];
                                     setFieldValue('expertiseAreas', areas);
+                                    setFieldValue('expertiseDescriptions', descs);
                                 }}
                                 className="flex items-center gap-1 text-xs text-[#01334c] hover:bg-[#01334c]/5 px-2 py-1 rounded-lg"
                             >
@@ -550,39 +655,29 @@ export default function GuidedReviewOverlay({
 
             case 'links': {
                 const links = (getFieldValue('socialLinks') || {}) as Record<string, string>;
+                const linkFields = [
+                    { key: 'linkedin', label: 'LinkedIn', placeholder: 'https://linkedin.com/in/...' },
+                    { key: 'website', label: 'Website', placeholder: 'https://yoursite.com' },
+                    { key: 'instagram', label: 'Instagram', placeholder: 'https://instagram.com/...' },
+                    { key: 'twitter', label: 'Twitter / X', placeholder: 'https://x.com/...' },
+                    { key: 'youtube', label: 'YouTube', placeholder: 'https://youtube.com/@...' },
+                    { key: 'facebook', label: 'Facebook', placeholder: 'https://facebook.com/...' },
+                    { key: 'companyWebsite', label: 'Company Website', placeholder: 'https://company.com' },
+                ];
                 return (
-                    <div className="space-y-3 animate-fade-in-up">
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">LinkedIn</label>
-                            <input
-                                type="url"
-                                value={links.linkedin || ''}
-                                onChange={(e) => setNestedValue('socialLinks', 'linkedin', e.target.value)}
-                                placeholder="https://linkedin.com/in/..."
-                                className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:border-[#01334c] outline-none"
-                                autoFocus
-                            />
-                        </div>
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Website</label>
-                            <input
-                                type="url"
-                                value={links.website || ''}
-                                onChange={(e) => setNestedValue('socialLinks', 'website', e.target.value)}
-                                placeholder="https://yoursite.com"
-                                className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:border-[#01334c] outline-none"
-                            />
-                        </div>
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Instagram</label>
-                            <input
-                                type="url"
-                                value={links.instagram || ''}
-                                onChange={(e) => setNestedValue('socialLinks', 'instagram', e.target.value)}
-                                placeholder="https://instagram.com/..."
-                                className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:border-[#01334c] outline-none"
-                            />
-                        </div>
+                    <div className="space-y-2.5 animate-fade-in-up">
+                        {linkFields.map((lf) => (
+                            <div key={lf.key} className="space-y-1">
+                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{lf.label}</label>
+                                <input
+                                    type="url"
+                                    value={links[lf.key] || ''}
+                                    onChange={(e) => setNestedValue('socialLinks', lf.key, e.target.value)}
+                                    placeholder={lf.placeholder}
+                                    className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:border-[#01334c] outline-none"
+                                />
+                            </div>
+                        ))}
                     </div>
                 );
             }
@@ -629,6 +724,9 @@ export default function GuidedReviewOverlay({
                     <div className="space-y-1">
                         <p className="text-sm font-semibold text-[#01334c]">{profileData.fullName}</p>
                         <p className="text-xs text-slate-500">{profileData.professionalTitle}</p>
+                        {profileData.tagline && (
+                            <p className="text-xs text-slate-500 italic">"{profileData.tagline}"</p>
+                        )}
                         {profileData.topHighlights && profileData.topHighlights.length > 0 && (
                             <div className="flex flex-wrap gap-1 mt-1">
                                 {profileData.topHighlights.map((h, i) => (
@@ -639,12 +737,29 @@ export default function GuidedReviewOverlay({
                     </div>
                 );
             case 'story':
-                return <p className="text-xs text-slate-600 line-clamp-3">{profileData.aboutMe}</p>;
+                return (
+                    <div className="space-y-2">
+                        {profileData.aboutMe && (
+                            <p className="text-xs text-slate-600 line-clamp-3">{profileData.aboutMe}</p>
+                        )}
+                        {profileData.personalStory30 && (
+                            <div className="bg-[#01334c]/5 rounded-lg px-3 py-2">
+                                <p className="text-[10px] font-bold text-[#01334c]/60 uppercase tracking-wider mb-0.5">Elevator Pitch</p>
+                                <p className="text-xs text-[#01334c] italic">"{profileData.personalStory30}"</p>
+                            </div>
+                        )}
+                    </div>
+                );
             case 'expertise':
                 return (
-                    <div className="flex flex-wrap gap-1.5">
+                    <div className="space-y-2">
                         {(profileData.expertiseAreas || []).map((a, i) => (
-                            <span key={i} className="text-xs bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full border border-emerald-200">{a}</span>
+                            <div key={i} className="bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
+                                <p className="text-xs font-medium text-emerald-700">{a}</p>
+                                {profileData.expertiseDescriptions?.[i] && (
+                                    <p className="text-[10px] text-emerald-600/70 mt-0.5">{profileData.expertiseDescriptions[i]}</p>
+                                )}
+                            </div>
                         ))}
                     </div>
                 );
@@ -661,14 +776,31 @@ export default function GuidedReviewOverlay({
                         )}
                     </div>
                 );
-            case 'links':
+            case 'links': {
+                const allLinks = [
+                    { key: 'linkedin', label: '🔗 LinkedIn', color: 'text-blue-600' },
+                    { key: 'website', label: '🌐 Website', color: 'text-slate-600' },
+                    { key: 'instagram', label: '📸 Instagram', color: 'text-pink-600' },
+                    { key: 'twitter', label: '𝕏 Twitter', color: 'text-slate-700' },
+                    { key: 'youtube', label: '▶ YouTube', color: 'text-red-600' },
+                    { key: 'facebook', label: '📘 Facebook', color: 'text-blue-700' },
+                    { key: 'companyWebsite', label: '🏢 Company', color: 'text-slate-600' },
+                ];
+                const sl = profileData.socialLinks as Record<string, string> | undefined;
                 return (
                     <div className="space-y-1">
-                        {profileData.socialLinks?.linkedin && <p className="text-xs text-blue-600 truncate">{profileData.socialLinks.linkedin}</p>}
-                        {profileData.socialLinks?.website && <p className="text-xs text-slate-600 truncate">{profileData.socialLinks.website}</p>}
-                        {profileData.socialLinks?.instagram && <p className="text-xs text-pink-600 truncate">{profileData.socialLinks.instagram}</p>}
+                        {allLinks.map((link) => {
+                            const val = sl?.[link.key];
+                            if (!val) return null;
+                            return (
+                                <p key={link.key} className={`text-xs ${link.color} truncate`}>
+                                    {link.label}: {val}
+                                </p>
+                            );
+                        })}
                     </div>
                 );
+            }
             case 'contact':
                 return (
                     <div className="space-y-1">
@@ -733,7 +865,7 @@ export default function GuidedReviewOverlay({
                             ? Math.max(20, Math.min(highlightRect.top, window.innerHeight - 450))
                             : '50%',
                     left: dragOffset ? dragOffset.x : 25,
-                    width: 370,
+                    width: 440,
                     zIndex: 10000,
                     pointerEvents: 'auto',
                     ...((!dragOffset && !highlightRect) ? { transform: 'translateY(-50%)' } : {}),
@@ -773,24 +905,138 @@ export default function GuidedReviewOverlay({
                         </div>
                     </div>
 
-                    {/* Card body */}
-                    <div className="px-5 py-4 max-h-[50vh] overflow-y-auto">
-                        <p className="text-sm text-slate-600 mb-4 leading-relaxed">
-                            {hasData ? section.description : section.emptyPrompt}
-                        </p>
+                    {/* Card body — scrollable with fade indicator */}
+                    <div className="relative">
+                        <div
+                            ref={cardBodyRef}
+                            onScroll={checkScroll}
+                            className="px-5 py-4 max-h-[55vh] overflow-y-auto scroll-smooth"
+                            style={{ scrollbarWidth: 'thin', scrollbarColor: '#cbd5e1 transparent' }}
+                        >
+                            <p className="text-[13px] text-slate-600 mb-3 leading-relaxed">
+                                {hasData ? section.description : section.emptyPrompt}
+                            </p>
 
-                        {/* Edit fields when editing or when section is empty */}
-                        {(isEditing || !hasData) && (
-                            <div className="mb-4">{renderEditFields()}</div>
-                        )}
+                            {/* Collapsible guidance section — starts collapsed for less overwhelm */}
+                            <div className="mb-3">
+                                <button
+                                    onClick={() => setShowGuidance(!showGuidance)}
+                                    className="flex items-center gap-1.5 text-[10px] font-bold text-amber-600 uppercase tracking-wider hover:text-amber-700 transition-colors"
+                                >
+                                    <Sparkles className="w-3 h-3" />
+                                    What goes here?
+                                    {showGuidance ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                                </button>
+                                {showGuidance && (
+                                    <div className="mt-2 bg-amber-50/60 border border-amber-200/50 rounded-xl px-3.5 py-3 animate-fade-in-up">
+                                        <p className="text-xs text-amber-900/80 leading-relaxed mb-2">{section.guidance}</p>
+                                        <ul className="space-y-1">
+                                            {section.tips.map((tip, i) => (
+                                                <li key={i} className="flex items-start gap-1.5 text-[11px] text-amber-800/70">
+                                                    <span className="mt-0.5 text-amber-500">•</span>
+                                                    {tip}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                        {section.examples && section.examples.length > 0 && (
+                                            <div className="mt-2 pt-2 border-t border-amber-200/40">
+                                                <p className="text-[10px] font-bold text-amber-700/60 uppercase tracking-wider mb-1">Examples</p>
+                                                {section.examples.map((ex, i) => (
+                                                    <p key={i} className="text-[11px] text-amber-800/60 italic">{ex}</p>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
 
-                        {/* Data preview when not editing and has data */}
-                        {!isEditing && hasData && (
-                            <div className="bg-slate-50 rounded-xl px-4 py-3 mb-4 border border-slate-100">
-                                {renderDataPreview()}
+                            {/* AI Suggestion — accept/reject */}
+                            {aiSuggestion && (
+                                <div className="mb-3 bg-violet-50/60 border border-violet-200/50 rounded-xl px-3.5 py-3 animate-fade-in-up">
+                                    <div className="flex items-center gap-1.5 mb-2">
+                                        <Sparkles className="w-3.5 h-3.5 text-violet-500" />
+                                        <span className="text-[10px] font-bold text-violet-700 uppercase tracking-wider">AI Suggestion</span>
+                                    </div>
+                                    <div className="space-y-1 mb-3">
+                                        {Object.entries(aiSuggestion).map(([key, value]) => (
+                                            <div key={key} className="text-xs text-violet-900/80">
+                                                <span className="font-semibold text-violet-700">{key}:</span>{' '}
+                                                <span>{typeof value === 'string' ? value : Array.isArray(value) ? value.join(', ') : JSON.stringify(value)}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() => {
+                                                onMerge(aiSuggestion);
+                                                setAiSuggestion(null);
+                                            }}
+                                            className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-violet-600 text-white text-xs font-bold hover:bg-violet-700 transition-colors active:scale-95"
+                                        >
+                                            <Check className="w-3 h-3" /> Accept
+                                        </button>
+                                        <button
+                                            onClick={() => setAiSuggestion(null)}
+                                            className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white border border-violet-200 text-violet-600 text-xs font-medium hover:bg-violet-50 transition-colors"
+                                        >
+                                            <X className="w-3 h-3" /> Keep Original
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Edit fields when editing or when section is empty */}
+                            {(isEditing || !hasData) && (
+                                <div className="mb-3">{renderEditFields()}</div>
+                            )}
+
+                            {/* Data preview when not editing and has data */}
+                            {!isEditing && hasData && (
+                                <div className="bg-slate-50 rounded-xl px-4 py-3 mb-3 border border-slate-100">
+                                    {renderDataPreview()}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Scroll fade gradient + bouncing indicator — only when more content below */}
+                        {canScrollMore && (
+                            <div className="absolute bottom-0 left-0 right-0 pointer-events-none">
+                                <div className="h-12 bg-gradient-to-t from-white via-white/80 to-transparent" />
+                                <div className="absolute bottom-1 left-1/2 -translate-x-1/2 animate-bounce">
+                                    <ChevronDown className="w-4 h-4 text-slate-400" />
+                                </div>
                             </div>
                         )}
                     </div>
+
+                    {/* AI Enhance button — always visible, never hidden behind scroll */}
+                    {hasData && !aiSuggestion && (
+                        <div className="px-5 py-2 border-t border-slate-100">
+                            <button
+                                onClick={async () => {
+                                    setIsEnhancing(true);
+                                    try {
+                                        const result = await enhanceProfileSection(section.id, profileData);
+                                        if (result && Object.keys(result).length > 0) {
+                                            setAiSuggestion(result);
+                                        }
+                                    } catch (err) {
+                                        console.error('AI enhance failed:', err);
+                                    } finally {
+                                        setIsEnhancing(false);
+                                    }
+                                }}
+                                disabled={isEnhancing}
+                                className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-gradient-to-r from-violet-500 to-purple-600 text-white text-xs font-bold uppercase tracking-wider hover:from-violet-600 hover:to-purple-700 transition-all shadow-md shadow-violet-500/20 active:scale-[0.98] disabled:opacity-60 disabled:cursor-wait"
+                            >
+                                {isEnhancing ? (
+                                    <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Enhancing...</>
+                                ) : (
+                                    <><Sparkles className="w-3.5 h-3.5" /> AI Enhance This Section</>
+                                )}
+                            </button>
+                        </div>
+                    )}
 
                     {/* Card footer */}
                     <div className="px-5 py-3 border-t border-slate-100 bg-slate-50/50">

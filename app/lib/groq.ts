@@ -78,26 +78,83 @@ const getModel = () => {
 
 // ─── LinkedIn Profile Extraction ──────────────────────────────────────────────
 export const extractProfileFromLinkedIn = async (linkedInJson: unknown): Promise<Partial<ProfileData>> => {
-    const prompt = `You are an expert profile builder. Extract information from the following LinkedIn JSON data and map it to a professional profile structure.
+    const prompt = `You are an elite personal branding strategist extracting LinkedIn profile data into a professional one-pager profile.
 
-Structure to fill (JSON only):
-- fullName: Display name (MAX 30 characters)
-- tagline: LinkedIn headline (MAX 70 characters)
-- profilePhoto: pictureUrl if available
-- aboutMe: summary field content (keep it to 3-4 powerful sentences)
-- expertiseAreas: up to 5, each MAX 3 words
-- topHighlights: exactly 3 key achievement lines (MAX 50 characters per line). Be extremely concise.
-- professionalTitle: Professional qualifications (MAX 35 characters)
-- positions: [{ title (MAX 40 chars), company (MAX 25 chars), location, duration, description (MAX 100 chars), logo }]
-- education: [{ schoolName (MAX 40 chars), degreeName, fieldOfStudy, duration }]
-- skills: array of short skill strings
-- socialLinks: { linkedin, website }
-- brands: [{ name (MAX 25 chars), role, duration }] — from positions/companies
+CRITICAL RULES — follow these EXACTLY:
+
+═══ SECTION 1A: IDENTITY (first impression — must hook instantly) ═══
+- "fullName": Display name. MAX 30 characters. Use the name as-is, do NOT modify.
+- "tagline": LinkedIn headline. MAX 70 characters. Make it magnetic — should make someone stop scrolling.
+  If headline is generic (e.g., "Open to opportunities"), rewrite using their actual role + impact.
+- "profilePhoto": Extract pictureUrl if available. If missing, leave empty — never invent a URL.
+- "topHighlights": EXACTLY 3 key achievement lines. MAX 35 characters each. These are HOOKS.
+  EXTRACTION LOGIC — scan the entire profile for:
+    • Numbers and metrics (10,000+, 500+, 15 years, ₹50Cr)
+    • Titles and roles (Trainer, Speaker, Consultant, CFO)
+    • Keywords (Award-winning, Certified, Expert, Published)
+  If LinkedIn data has fewer than 3 clear achievements, synthesize from positions/summary.
+  Examples: "Trained 15,000+ Professionals", "Virtual CFO | Growth Strategist", "Built 0 to ₹50Cr Revenue"
+- "professionalTitle": Professional qualifications (CA, CS, MBA, CFA). MAX 35 characters.
+  Extract from headline, certifications, or education. If none found, derive from job titles.
+
+═══ SECTION 1B: PERSONAL STORY & STRENGTHS ═══
+- "aboutMe": 3-4 powerful sentences from the LinkedIn summary/about section.
+  Apply the "SO WHAT?" test — every sentence must answer "Why should someone care?"
+  If summary is too long, condense. If too short or missing, synthesize from positions + skills.
+  Cover: past experience, present role, key companies, what they're known for.
+- "personalStory30": One powerful line (max 30 words) about their journey. Elevator pitch.
+  If not explicitly in the profile, craft one from their career trajectory.
+- "expertiseAreas": Up to 5 core areas. MAX 3 words each (e.g., "Finance Strategy", "Business Training").
+  Extract from LinkedIn skills, headline, and summary. Prefer specific over generic.
+  "Business Consulting" is weak → "Growth Strategy Consulting" is better.
+- "expertiseDescriptions": Array of strings corresponding to expertiseAreas. MAX 35 chars each.
+  Briefly explain what they do or solve in that area. Example: "Scaling startups to 10x revenue" or "Optimizing tax compliance".
+- "certifications": Extract any certifications listed.
+- "technicalSkills": Extract technical tools/software (Excel, SAP, Tally, etc.).
+- "achievements": Up to 5 key milestones. Extract from summary, honors, or position descriptions.
+
+═══ SECTION 2: SOCIAL MEDIA & LINKS ═══
+- "socialLinks": { linkedin (REQUIRED), website, instagram, twitter, facebook, youtube, companyWebsite }
+  Extract ALL URLs found in the profile (contact info, websites section, bio links).
+  LinkedIn URL is mandatory — construct from username if needed.
+  NEVER invent URLs — only extract what exists in the data.
+
+═══ SECTION 3: BRANDS & WORK EXPERIENCE ═══
+- "positions": Array of { title (MAX 40 chars), company (MAX 25 chars), location, duration, description (MAX 100 chars), logo }
+  Include ALL positions from LinkedIn. Order by recency (newest first).
+  If description is too long, condense to the most impactful 1-2 sentences.
+  If a position has no description, leave it empty — don't fabricate.
+- "brands": [{ name (MAX 25 chars), role, duration }] — derive from positions/companies.
+- "education": [{ schoolName (MAX 40 chars), degreeName, fieldOfStudy, duration }]
+- "skills": Array of short skill strings from LinkedIn skills section.
+
+═══ SECTION 4: IMPACT ═══
+- "impactHeadline": One-line impact statement (MAX 50 chars). Derive from summary/headline.
+- "impactStory": A brief narrative of their professional impact (MAX 100 words).
+
+═══ SECTION 5: AWARDS ═══
+- "awards": [{ title, organization, year }] — from LinkedIn honors & awards section.
+  If no awards section exists, leave as empty array.
+
+═══ SECTION 6: CONTACT ═══
+- "contact": { emailPrimary, phonePrimary } — ONLY if present in LinkedIn data.
+  NEVER invent contact details.
+
+═══ EDGE CASES ═══
+- If a field is completely missing from LinkedIn data, omit it from the output.
+- If the summary/about is empty, synthesize "aboutMe" from position descriptions.
+- If headline is generic, rewrite it to be impactful based on actual experience.
+- If no profile photo URL exists, omit "profilePhoto" entirely.
+- If positions have company logos, include the logo URL.
+- Handle non-English characters correctly (names, companies).
+- If LinkedIn data is minimal (e.g., only name + 1 position), still produce the best possible output.
+- Always use POWER VERBS: Led, Built, Launched, Transformed, Scaled, Pioneered.
+- QUANTIFY IMPACT wherever the data supports it.
 
 JSON Data:
 ${JSON.stringify(linkedInJson)}
 
-Return ONLY a valid JSON object matching the profile structure. Include only fields you can extract.`;
+Return ONLY a valid JSON object. No markdown wrapping, no explanations.`;
 
     try {
         const result = streamText({
@@ -136,32 +193,44 @@ Return ONLY a valid JSON object matching the profile structure. Include only fie
 
 // ─── Profile Data Polishing ──────────────────────────────────────────────────
 export const polishProfileData = async (data: Partial<ProfileData>): Promise<Partial<ProfileData>> => {
-    const prompt = `You are an elite personal branding strategist and professional copywriter who has written profiles for Fortune 500 executives.
+    const prompt = `You are an elite personal branding strategist and professional copywriter. Polish this profile data for a single A4 page.
 
-Your job: Take this profile data and make every word count. The output will be printed on a single A4 page — space is precious.
+POLISHING PRINCIPLES:
+1. "SO WHAT?" TEST: Every sentence must answer "Why should someone care?" If it doesn't, rewrite it.
+2. POWER VERBS: Replace passive language with action verbs (Led, Built, Launched, Transformed, Scaled, Pioneered).
+3. QUANTIFY IMPACT: "Helped businesses grow" → "Helped 200+ businesses achieve 3x growth."
+4. MIRROR TONE: Formal for CAs/lawyers. Bold for entrepreneurs. Creative for designers.
+5. PRESERVE FACTS: Enhance presentation, never invent new information.
 
-Polishing principles:
-1. APPLY THE "SO WHAT?" TEST: Every sentence should answer "Why should someone care?" If it doesn't, rewrite it.
-2. USE POWER VERBS: Replace passive language with action verbs (Led, Built, Launched, Transformed, Scaled, Pioneered).
-3. QUANTIFY IMPACT: Where possible, add numbers. "Helped businesses grow" → "Helped 200+ businesses achieve 3x growth."
-4. MIRROR TONE: Match the user's professional context. Formal for CAs/lawyers. Bold for entrepreneurs. Creative for designers.
-5. MAKE THE TAGLINE MAGNETIC: It should make someone stop scrolling. Keep under 70 chars.
-6. TOP HIGHLIGHTS = HOOKS: These 3 lines appear first. They must grab attention instantly. MAX 50 chars each.
-7. PERSONAL STORY = ONE BREATH: The 30-word story should be one powerful sentence that creates meaning.
-8. STRICT LENGTH CONSTRAINTS (do NOT exceed):
-   - "topHighlights": MAX 50 characters each line
-   - "tagline": MAX 70 characters
-   - "professionalTitle": MAX 35 characters
-   - "fullName": MAX 30 characters
-   - "expertiseAreas": MAX 3 words per area
-   - Positions "title": MAX 40 chars, "company": MAX 25 chars
-9. PRESERVE FACTS: Enhance presentation, never invent new information.
-10. Return ONLY a valid JSON object matching the input structure.
+STRICT CHARACTER LIMITS (NEVER exceed):
+- "fullName": MAX 30 characters
+- "tagline": MAX 70 characters. Must be magnetic — should make someone stop scrolling.
+- "topHighlights": EXACTLY 3 lines, MAX 35 characters each. These are HOOKS — first thing people see.
+  Must include numbers/metrics where possible. Weak: "Business Expert" → Strong: "Scaled 3 Companies to ₹50Cr+"
+- "professionalTitle": MAX 35 characters
+- "expertiseAreas": MAX 3 words per area, up to 5 areas. Be specific, not generic.
+- "expertiseDescriptions": MAX 35 characters per description. Explains the value/impact of the expertise.
+- "aboutMe": 3-4 powerful sentences. Apply "So What?" test to every line.
+- "personalStory30": One powerful sentence, max 30 words. The elevator pitch.
+- Positions "title": MAX 40 chars, "company": MAX 25 chars, "description": MAX 100 chars
+- "impactHeadline": MAX 50 characters
+
+EDGE CASES:
+- If topHighlights are weak or generic, strengthen them with numbers and power verbs from the profile data.
+- If aboutMe is too long, condense to the 3-4 most impactful sentences.
+- If aboutMe is too short, expand using data from positions and achievements.
+- If tagline is generic ("Entrepreneur"), make it specific ("Serial Entrepreneur | Built 3 Companies to ₹50Cr+").
+- If expertise areas are generic, make them industry-specific.
+- NEVER modify contact details, social links, or profile photo URLs.
+- NEVER invent new facts, awards, or metrics not present in the data.
+- If a field is empty/missing, leave it as-is — don't fill it with generic content.
+- Handle positions with missing descriptions gracefully — polish only what exists.
+- Ensure all arrays maintain their original length (don't add or remove items).
 
 Input Data:
 ${JSON.stringify(data, null, 2)}
 
-Return ONLY the polished JSON object.`;
+Return ONLY the polished JSON object. No markdown, no explanations.`;
 
     try {
         const result = await streamText({
@@ -190,6 +259,101 @@ Return ONLY the polished JSON object.`;
         console.error('Error polishing profile data:', error);
     }
     return data; // Return original data if polishing fails
+};
+
+// ── Section-specific guidance from Personal Profile Builder v2 ────────────────
+const SECTION_GUIDANCE: Record<string, string> = {
+    identity: `This is the IDENTITY section — the first thing people see.
+- "fullName": Display name, MAX 30 characters
+- "professionalTitle": Qualifications like "CA, CS, MBA, CFA", MAX 35 characters
+- "topHighlights": Exactly 3 key achievement lines, MAX 35 chars each. These are HOOKS — they must grab attention instantly.
+  Examples: "Trained 15,000+ Business Owners", "Virtual CFO | Startup Strategist", "Helped 500+ Startups with Compliance"
+  Look for: Numbers/metrics, Titles/roles, Keywords (Award-winning, Certified, Expert)
+- "tagline": LinkedIn headline style, MAX 70 characters. Make it magnetic — should make someone stop scrolling.
+RULE: Use POWER VERBS (Led, Built, Launched, Transformed, Scaled, Pioneered). QUANTIFY IMPACT where possible.`,
+
+    story: `This is the STORY section — About Me + Personal Story.
+- "aboutMe": 3-4 powerful sentences covering past experience, present role, companies worked with, passions, achievements, and what they want to be known for. Apply the "SO WHAT?" test — every sentence must answer "Why should someone care?"
+- "personalStory30": One powerful line (30 words) about their journey. This is the elevator pitch.
+  Examples:
+  "From son of a farmer to the CEO of a 50-crore company — building businesses that make a difference."
+  "Started with ₹10,000 savings, now helping 1000+ businesses achieve their financial goals."
+  "Left a cushy corporate job to follow my passion — never looked back since 2015."
+RULE: Match the user's professional tone. Formal for CAs/lawyers. Bold for entrepreneurs.`,
+
+    expertise: `This is the EXPERTISE section — core skills and professional credentials.
+- "expertiseAreas": Up to 5 core expertise areas, MAX 3 words each (e.g., "Training", "Finance Strategy", "Digital Marketing")
+- "expertiseDescriptions": MAX 35 chars per description. Explains the value/impact of the expertise.
+RULE: Be specific and impactful. "Business Consulting" is generic → "Growth Strategy Consulting" is better.`,
+
+    career: `This is the CAREER section — brands and work experience.
+- "positions": Array of { title (MAX 40 chars), company (MAX 25 chars), duration }
+  Show the most impressive roles first. Include company name, your title, and duration.
+RULE: Allow up to 10 brands. Preserve factual accuracy — only enhance presentation.`,
+
+    links: `This is the LINKS section — social media and online presence.
+- "socialLinks": Object with linkedin (primary, required), website, instagram, twitter, facebook, youtube, companyWebsite
+  LinkedIn is the most important professional link. A personal website adds credibility.
+RULE: Only clean up URL formatting, don't invent URLs.`,
+
+    contact: `This is the CONTACT section — how people reach the user.
+- "contact": Object with emailPrimary and phonePrimary
+RULE: Never modify contact details — just ensure formatting is clean. Don't invent contact info.`,
+};
+
+// ── Enhance a specific profile section with AI ────────────────────────────────
+export const enhanceProfileSection = async (
+    sectionId: string,
+    profileData: Partial<ProfileData>
+): Promise<Partial<ProfileData>> => {
+    const guidance = SECTION_GUIDANCE[sectionId] || '';
+
+    const prompt = `You are an elite personal branding strategist. Enhance ONLY the fields relevant to the section below.
+
+SECTION CONTEXT:
+${guidance}
+
+FULL PROFILE DATA (for context, do NOT modify fields outside this section):
+${JSON.stringify(profileData, null, 2)}
+
+RULES:
+1. Return a JSON object with ONLY the fields that belong to this section, enhanced.
+2. PRESERVE all facts — enhance presentation, never invent new information.
+3. Use power verbs: Led, Built, Launched, Transformed, Scaled, Pioneered.
+4. Quantify impact where possible: "Helped businesses" → "Helped 200+ businesses achieve 3x growth."
+5. Respect ALL character limits specified above.
+6. Return ONLY valid JSON, no markdown, no explanations.`;
+
+    try {
+        const result = await streamText({
+            model: getModel(),
+            messages: [{ role: 'user', content: prompt }],
+            temperature: 0.6,
+        });
+
+        const fullText = await result.text;
+        if (fullText) {
+            const cleanText = fullText.replace(/```json\n?|\n?```/g, '').trim();
+            let parsed: unknown;
+            try {
+                parsed = JSON.parse(cleanText);
+            } catch {
+                console.error('AI returned invalid JSON for section enhancement');
+                return {};
+            }
+            const validated = ProfileSchema.partial().safeParse(parsed);
+            if (validated.success) {
+                return validated.data;
+            }
+            console.warn('AI section enhancement failed schema validation:', validated.error.issues);
+            if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+                return parsed as Partial<ProfileData>;
+            }
+        }
+    } catch (error) {
+        console.error('Error enhancing profile section:', error);
+    }
+    return {};
 };
 
 // ─── Chat Response Types ──────────────────────────────────────────────────────

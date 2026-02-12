@@ -149,6 +149,7 @@ export const renderProfile = (data: Partial<ProfileData>) => {
     personalStory30 = "",
     professionalTitle = "",
     expertiseAreas = [],
+    expertiseDescriptions = [],
     certifications = [],
     socialLinks = {},
     brands = [],
@@ -235,12 +236,14 @@ export const renderProfile = (data: Partial<ProfileData>) => {
 
   // Build expertise role cards
   const roleCards = expertiseAreas.length > 0
-    ? expertiseAreas.slice(0, 3).map(area => {
+    ? expertiseAreas.slice(0, 3).map((area, idx) => {
       const icon = getIconForExpertise(area);
+      const desc = expertiseDescriptions?.[idx] || '';
       return `
         <div class="role-card">
           <div class="role-icon"><i class="${icon}"></i></div>
           <div class="role-title">${escapeHtml(area)}</div>
+          ${desc ? `<div class="role-desc">${escapeHtml(desc)}</div>` : ''}
         </div>`;
     }).join('')
     : skills.length > 0
