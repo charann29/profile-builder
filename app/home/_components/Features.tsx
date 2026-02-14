@@ -1,91 +1,175 @@
 'use client';
 
-import React from 'react';
-import { Bot, FileText, Check, Download, Linkedin, Zap } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { Bot, FileText, Check, Download, Linkedin, Zap, Palette, Shield } from 'lucide-react';
+
+const features = [
+    {
+        icon: Bot,
+        title: 'AI Content Polishing',
+        desc: 'Our advanced AI rewrites your bullet points into powerful, results-driven impact statements. It applies the "So What?" test to every line.',
+        color: '#03334c',
+        bgColor: 'rgba(3, 51, 76, 0.06)',
+        hoverBorder: 'hover:border-[#03334c]/20',
+        large: true,
+        demo: {
+            before: 'Managed a team of 5 engineers',
+            after: 'Led a high-performance team of 5, increasing product delivery speed by 40%',
+        },
+    },
+    {
+        icon: Linkedin,
+        title: 'LinkedIn Import',
+        desc: "Don't start from scratch. Pull all your career data from LinkedIn in one click.",
+        color: '#0077b5',
+        bgColor: 'rgba(0, 119, 181, 0.08)',
+        hoverBorder: 'hover:border-[#0077b5]/25',
+        large: false,
+    },
+    {
+        icon: Check,
+        title: 'ATS Optimized',
+        desc: 'Clean semantic structure ensures Applicant Tracking Systems parse your profile perfectly.',
+        color: '#059669',
+        bgColor: 'rgba(5, 150, 105, 0.08)',
+        hoverBorder: 'hover:border-emerald-500/25',
+        large: false,
+    },
+    {
+        icon: Download,
+        title: 'Print-Ready PDF',
+        desc: 'Export high-resolution A4 PDFs that look amazing on screen and in print. No awkward page breaks.',
+        color: '#03334c',
+        bgColor: 'rgba(3, 51, 76, 0.06)',
+        hoverBorder: 'hover:border-[#03334c]/20',
+        large: true,
+    },
+    {
+        icon: Palette,
+        title: 'Beautiful Design',
+        desc: 'Professionally designed templates that make you stand out from generic resumes.',
+        color: '#7c3aed',
+        bgColor: 'rgba(124, 58, 237, 0.08)',
+        hoverBorder: 'hover:border-violet-500/25',
+        large: false,
+    },
+    {
+        icon: Shield,
+        title: 'Private & Secure',
+        desc: 'Your data stays yours. We never sell or share your personal information with third parties.',
+        color: '#0369a1',
+        bgColor: 'rgba(3, 105, 161, 0.08)',
+        hoverBorder: 'hover:border-sky-600/25',
+        large: false,
+    },
+];
 
 export default function Features() {
-    return (
-        <section id="features" className="py-24 bg-slate-50 text-[#03334c] relative overflow-hidden">
-            <div className="max-w-7xl mx-auto px-6">
+    const sectionRef = useRef<HTMLDivElement>(null);
+    const [visible, setVisible] = useState(false);
 
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) {
+                    setVisible(true);
+                    observer.disconnect();
+                }
+            },
+            { threshold: 0.15 }
+        );
+        if (sectionRef.current) observer.observe(sectionRef.current);
+        return () => observer.disconnect();
+    }, []);
+
+    return (
+        <section id="features" ref={sectionRef} className="py-28 bg-slate-50/50 text-[#03334c] relative overflow-hidden">
+            {/* Background decoration */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-gradient-to-br from-[#03334c]/[0.02] to-blue-500/[0.02] rounded-full blur-[120px] pointer-events-none" />
+
+            <div className="max-w-7xl mx-auto px-6 relative">
                 {/* Section Header */}
-                <div className="text-center max-w-3xl mx-auto mb-20 space-y-4">
-                    <h2 className="text-3xl md:text-5xl font-serif font-bold tracking-tight">
-                        More than just a resume. <br />
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#03334c] to-blue-600">A smart AI profile.</span>
+                <div
+                    className="text-center max-w-3xl mx-auto mb-20 space-y-5"
+                    style={{
+                        opacity: visible ? 1 : 0,
+                        transform: visible ? 'translateY(0)' : 'translateY(30px)',
+                        transition: 'all 0.7s cubic-bezier(0.16, 1, 0.3, 1)',
+                    }}
+                >
+                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#03334c]/[0.05] border border-[#03334c]/10 text-xs font-bold tracking-wider text-[#03334c] uppercase">
+                        <Zap className="w-3.5 h-3.5" />
+                        <span>Powerful Features</span>
+                    </div>
+                    <h2 className="text-3xl md:text-[2.75rem] font-bold tracking-tight leading-tight">
+                        More than just a resume.{' '}
+                        <br className="hidden sm:block" />
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#03334c] to-blue-600">
+                            A smart AI profile.
+                        </span>
                     </h2>
-                    <p className="text-slate-500 text-lg leading-relaxed">
-                        Our AI Personal Profile Generator analyzes your career history and rebuilds it into a compelling narrative.
+                    <p className="text-slate-500 text-lg leading-relaxed max-w-2xl mx-auto">
+                        Our AI Personal Profile Generator analyzes your career history and rebuilds it into a compelling, professional narrative.
                     </p>
                 </div>
 
                 {/* Bento Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[300px]">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    {features.map((feature, idx) => {
+                        const Icon = feature.icon;
+                        const delay = idx * 0.1;
 
-                    {/* Card 1: AI Polish (Large) */}
-                    <div className="md:col-span-2 row-span-1 bg-white rounded-3xl p-8 border border-slate-200 hover:border-[#03334c]/20 hover:shadow-xl hover:shadow-[#03334c]/5 transition-all group relative overflow-hidden">
-                        <div className="absolute inset-0 bg-gradient-to-br from-[#03334c]/[0.02] to-blue-500/[0.02] opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                        <div className="relative z-10 h-full flex flex-col justify-between">
-                            <div>
-                                <div className="w-12 h-12 rounded-xl bg-[#03334c]/10 text-[#03334c] flex items-center justify-center mb-6">
-                                    <Bot className="w-6 h-6" />
-                                </div>
-                                <h3 className="text-2xl font-bold mb-2 text-[#03334c]">AI Content Polishing</h3>
-                                <p className="text-slate-500">Our advanced AI rewrites your boring bullet points into powerful, results-driven impact statements. It applies the "So What?" test to every line.</p>
-                            </div>
-                            <div className="mt-6 bg-slate-50 rounded-xl p-5 border border-slate-100 font-mono text-xs text-slate-600 relative">
-                                <div className="absolute left-0 top-0 bottom-0 w-1 bg-green-400 rounded-l-xl"></div>
-                                <div className="mb-2 text-slate-400 line-through pl-2">Managed a team of 5</div>
-                                <div className="text-[#03334c] font-semibold pl-2">→ Led a high-performance team of 5, increasing output by 40%</div>
-                            </div>
-                        </div>
-                    </div>
+                        return (
+                            <div
+                                key={idx}
+                                className={`
+                                    ${feature.large ? 'md:col-span-2' : ''}
+                                    group relative bg-white rounded-2xl p-7 border border-slate-100 
+                                    ${feature.hoverBorder} hover:shadow-xl hover:shadow-slate-200/50 
+                                    transition-all duration-500 hover:-translate-y-1 overflow-hidden
+                                `}
+                                style={{
+                                    opacity: visible ? 1 : 0,
+                                    transform: visible ? 'translateY(0)' : 'translateY(30px)',
+                                    transition: `all 0.7s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s`,
+                                }}
+                            >
+                                {/* Hover glow */}
+                                <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-slate-50/50 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl" />
 
-                    {/* Card 2: LinkedIn Sync */}
-                    <div className="bg-white rounded-3xl p-8 border border-slate-200 hover:border-[#0077b5]/30 hover:shadow-xl hover:shadow-[#0077b5]/10 transition-all group relative overflow-hidden">
-                        <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-blue-50 rounded-full group-hover:bg-blue-100/50 transition-all"></div>
-                        <div className="relative z-10">
-                            <div className="w-12 h-12 rounded-xl bg-[#0077b5]/10 text-[#0077b5] flex items-center justify-center mb-6">
-                                <Linkedin className="w-6 h-6" />
-                            </div>
-                            <h3 className="text-xl font-bold mb-2 text-[#03334c]">Instant Import</h3>
-                            <p className="text-slate-500 text-sm leading-relaxed">Don't start from scratch. Pull all your data from LinkedIn in one click.</p>
-                        </div>
-                    </div>
+                                <div className="relative z-10 h-full flex flex-col">
+                                    {/* Icon */}
+                                    <div
+                                        className="w-12 h-12 rounded-xl flex items-center justify-center mb-5 transition-transform duration-300 group-hover:scale-110"
+                                        style={{ backgroundColor: feature.bgColor }}
+                                    >
+                                        <Icon className="w-5.5 h-5.5" style={{ color: feature.color }} />
+                                    </div>
 
-                    {/* Card 3: ATS Friendly */}
-                    <div className="bg-white rounded-3xl p-8 border border-slate-200 hover:border-green-500/30 hover:shadow-xl hover:shadow-green-500/10 transition-all group relative overflow-hidden">
-                        <div className="relative z-10">
-                            <div className="w-12 h-12 rounded-xl bg-green-500/10 text-green-600 flex items-center justify-center mb-6">
-                                <Check className="w-6 h-6" />
-                            </div>
-                            <h3 className="text-xl font-bold mb-2 text-[#03334c]">ATS Optimized</h3>
-                            <p className="text-slate-500 text-sm leading-relaxed">Clean code and standard layout ensure Applicant Tracking Systems read your profile perfectly.</p>
-                        </div>
-                    </div>
+                                    {/* Content */}
+                                    <h3 className="text-lg font-bold text-[#03334c] mb-2">{feature.title}</h3>
+                                    <p className="text-slate-500 text-sm leading-relaxed">{feature.desc}</p>
 
-                    {/* Card 4: PDF Export (Large) */}
-                    <div className="md:col-span-2 row-span-1 bg-white rounded-3xl p-8 border border-slate-200 hover:border-[#03334c]/20 hover:shadow-xl hover:shadow-[#03334c]/5 transition-all group relative overflow-hidden">
-                        <div className="absolute inset-0 bg-gradient-to-tl from-[#03334c]/[0.02] to-blue-500/[0.02] opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                        <div className="grid md:grid-cols-2 gap-8 items-center h-full">
-                            <div>
-                                <div className="w-12 h-12 rounded-xl bg-[#03334c]/10 text-[#03334c] flex items-center justify-center mb-6">
-                                    <Download className="w-6 h-6" />
-                                </div>
-                                <h3 className="text-2xl font-bold mb-2 text-[#03334c]">Print-Ready PDF</h3>
-                                <p className="text-slate-500">Export high-resolution A4 PDFs that look amazing on screen and in print. No more awkward page breaks.</p>
-                            </div>
-                            <div className="bg-slate-50 rounded-lg shadow-sm p-3 transform rotate-3 group-hover:rotate-0 transition-all duration-500 border border-slate-100">
-                                <div className="h-40 bg-white rounded border border-slate-200 w-full shadow-inner flex flex-col gap-2 p-3">
-                                    <div className="w-1/2 h-2 bg-slate-200 rounded"></div>
-                                    <div className="w-full h-1.5 bg-slate-100 rounded"></div>
-                                    <div className="w-full h-1.5 bg-slate-100 rounded"></div>
-                                    <div className="w-3/4 h-1.5 bg-slate-100 rounded"></div>
+                                    {/* AI Demo (for the large card) */}
+                                    {feature.demo && (
+                                        <div className="mt-6 bg-slate-50 rounded-xl p-5 border border-slate-100 relative overflow-hidden">
+                                            <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-emerald-400 to-emerald-500 rounded-l-xl" />
+                                            <div className="pl-3 space-y-2.5">
+                                                <div className="flex items-start gap-2">
+                                                    <span className="text-[10px] font-bold text-red-400 bg-red-50 px-1.5 py-0.5 rounded uppercase tracking-wider shrink-0 mt-0.5">Before</span>
+                                                    <span className="text-xs text-slate-400 line-through">{feature.demo.before}</span>
+                                                </div>
+                                                <div className="flex items-start gap-2">
+                                                    <span className="text-[10px] font-bold text-emerald-500 bg-emerald-50 px-1.5 py-0.5 rounded uppercase tracking-wider shrink-0 mt-0.5">After</span>
+                                                    <span className="text-xs text-[#03334c] font-semibold">{feature.demo.after}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
-                        </div>
-                    </div>
-
+                        );
+                    })}
                 </div>
             </div>
         </section>

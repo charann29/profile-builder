@@ -1,6 +1,7 @@
 import React from 'react';
 import Hero from './_components/Hero';
 import Features from './_components/Features';
+import Testimonials from './_components/Testimonials';
 import HowItWorks from './_components/HowItWorks';
 import FAQ from './_components/FAQ';
 import Footer from './_components/Footer';
@@ -16,9 +17,11 @@ export default function MarketingPage() {
         <main className="min-h-screen bg-white">
             <Hero />
             <Features />
+            <Testimonials />
             <HowItWorks />
             <FAQ />
             <Footer />
         </main>
     );
 }
+
