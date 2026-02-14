@@ -254,9 +254,11 @@ export default function Home() {
       // Polish the data with AI before saving
       const polishedData = await polishProfileData(editedData);
 
-      // Merge polished data OVER edited data to ensure we don't lose fields like profilePhoto 
-      // if the AI omits them during polishing.
+      // Merge polished data OVER edited data, but protect profilePhoto if the AI returns it empty
       const finalData = { ...editedData, ...polishedData };
+      if (editedData.profilePhoto && !polishedData.profilePhoto) {
+        finalData.profilePhoto = editedData.profilePhoto;
+      }
       setProfileData(finalData);
       setShowEditForm(false);
 
@@ -370,9 +372,10 @@ export default function Home() {
             letterRendering: true,
             scrollY: 0,
             scrollX: 0,
+            backgroundColor: '#ffffff',
           },
-          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
-          pagebreak: { mode: 'css' },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const, compress: true },
+          pagebreak: { mode: ['avoid-all', 'css', 'legacy'] as string[], before: '.pdf-page-break' },
         };
 
         await html2pdf().set(opt).from(element).save();

@@ -97,17 +97,52 @@ const REVIEW_SECTIONS: ReviewSection[] = [
     },
     {
         id: 'career',
-        label: 'Your Career',
+        label: 'Career & Brands',
         description: 'Your work history and brands you\'ve been associated with.',
         emptyPrompt: 'No work experience found. Add your positions?',
         selector: '.brands-section',
         fields: ['positions'],
         hasData: (d) => !!(d.positions && d.positions.length > 0),
-        guidance: 'Showcase the brands and companies you\'ve worked with — your roles, durations, and key contributions.',
+        guidance: 'Showcase the brands and companies you\'ve worked with — your roles, durations, and key contributions. This section highlights the "Brands Worked" on your profile.',
         tips: [
             'Lead with your most impressive role',
             'Include company name, title, and duration',
             'Up to 10 brands — focus on the ones that build credibility',
+        ],
+    },
+    {
+        id: 'impact',
+        label: 'Impact Created',
+        description: 'Quantifiable achievements and professional impact.',
+        emptyPrompt: 'No impact details found. Share your achievements?',
+        selector: '.impact-section',
+        fields: ['impactHeadline', 'impactStory', 'professionSpecificImpact'],
+        hasData: (d) => !!(d.impactHeadline || d.impactStory),
+        guidance: 'This section highlights your professional results. Use numbers, percentages, and power verbs to quantify your impact.',
+        tips: [
+            'Use metrics: "Increased revenue by 40%", "Led team of 20"',
+            'Headline should be a punchy summary of your biggest win',
+            'Story provides context for your achievements',
+        ],
+        examples: [
+            '"Generated $2M in new business within 12 months"',
+            '"Optimized supply chain, reducing costs by 15%"',
+            '"Mentored 50+ junior developers into lead roles"',
+        ],
+    },
+    {
+        id: 'awards',
+        label: 'Awards & Recognition',
+        description: 'Honors, awards, and media features.',
+        emptyPrompt: 'No awards found. Add your recognitions?',
+        selector: '.awards-section',
+        fields: ['awards', 'mediaFeatures'],
+        hasData: (d) => !!((d.awards && d.awards.length > 0) || (d.mediaFeatures && d.mediaFeatures.length > 0)),
+        guidance: 'Social proof builds massive credibility. List your honors, awards, and any times you\'ve been featured in the media.',
+        tips: [
+            'Include the organization that gave the award',
+            'Add the year for context',
+            'Mention media features (interviews, articles, podcasts)',
         ],
     },
     {
@@ -684,6 +719,171 @@ export default function GuidedReviewOverlay({
                                 placeholder="+91 12345 67890"
                                 className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:border-[#01334c] focus:bg-white outline-none transition-all"
                             />
+                        </div>
+                    </div>
+                );
+            }
+
+            case 'impact':
+                return (
+                    <div className="space-y-4 animate-fade-in-up">
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Impact Headline</label>
+                            <input
+                                type="text"
+                                value={(getFieldValue('impactHeadline') as string) || ''}
+                                onChange={(e) => setFieldValue('impactHeadline', e.target.value)}
+                                placeholder="Your biggest professional win"
+                                className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:border-[#01334c] focus:bg-white outline-none transition-all"
+                            />
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Impact Story / Highlights</label>
+                            <textarea
+                                value={(getFieldValue('impactStory') as string) || ''}
+                                onChange={(e) => setFieldValue('impactStory', e.target.value)}
+                                rows={6}
+                                placeholder="Describe your results, metrics, and how you achieved them..."
+                                className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:border-[#01334c] focus:bg-white outline-none resize-none transition-all"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Specific Metrics</label>
+                            {Object.entries((getFieldValue('professionSpecificImpact') as Record<string, string>) || {}).map(([key, val], i) => (
+                                <div key={i} className="flex gap-2 items-center">
+                                    <input
+                                        type="text"
+                                        value={key}
+                                        readOnly
+                                        className="w-1/3 bg-slate-100 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-500 outline-none"
+                                    />
+                                    <input
+                                        type="text"
+                                        value={val}
+                                        onChange={(e) => {
+                                            const current = (getFieldValue('professionSpecificImpact') as Record<string, string>) || {};
+                                            setFieldValue('professionSpecificImpact', { ...current, [key]: e.target.value });
+                                        }}
+                                        className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:border-[#01334c] focus:bg-white outline-none transition-all"
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                );
+
+            case 'awards': {
+                const awards = ((getFieldValue('awards') as ProfileData['awards']) || []);
+                const media = ((getFieldValue('mediaFeatures') as ProfileData['mediaFeatures']) || []);
+                return (
+                    <div className="space-y-6 animate-fade-in-up">
+                        <div className="space-y-3">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Awards & Honors</label>
+                            <div className="space-y-3 max-h-48 overflow-y-auto pr-1">
+                                {awards.map((a, i) => (
+                                    <div key={i} className="bg-slate-50 border border-slate-200 rounded-lg p-3 relative group hover:bg-white hover:shadow-sm transition-all">
+                                        <button
+                                            onClick={() => {
+                                                const updated = [...awards];
+                                                updated.splice(i, 1);
+                                                setFieldValue('awards', updated);
+                                            }}
+                                            className="absolute top-2 right-2 p-1 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                        >
+                                            <Trash2 className="w-3 h-3" />
+                                        </button>
+                                        <input
+                                            type="text"
+                                            value={a.title || ''}
+                                            onChange={(e) => {
+                                                const updated = [...awards];
+                                                updated[i] = { ...a, title: e.target.value };
+                                                setFieldValue('awards', updated);
+                                            }}
+                                            placeholder="Award Title"
+                                            className="w-full bg-white border border-slate-100 rounded px-2 py-1.5 text-xs focus:border-[#01334c] outline-none font-medium mb-2"
+                                        />
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <input
+                                                type="text"
+                                                value={a.organization || ''}
+                                                onChange={(e) => {
+                                                    const updated = [...awards];
+                                                    updated[i] = { ...a, organization: e.target.value };
+                                                    setFieldValue('awards', updated);
+                                                }}
+                                                placeholder="Organization"
+                                                className="bg-white border border-slate-100 rounded px-2 py-1.5 text-xs focus:border-[#01334c] outline-none"
+                                            />
+                                            <input
+                                                type="text"
+                                                value={a.year || ''}
+                                                onChange={(e) => {
+                                                    const updated = [...awards];
+                                                    updated[i] = { ...a, year: e.target.value };
+                                                    setFieldValue('awards', updated);
+                                                }}
+                                                placeholder="Year"
+                                                className="bg-white border border-slate-100 rounded px-2 py-1.5 text-xs focus:border-[#01334c] outline-none"
+                                            />
+                                        </div>
+                                    </div>
+                                ))}
+                                <button
+                                    onClick={() => setFieldValue('awards', [...awards, { title: '', organization: '', year: '' }])}
+                                    className="flex items-center gap-1 text-xs text-[#01334c] hover:bg-[#01334c]/5 px-2 py-2 rounded-lg w-full justify-center border border-dashed border-[#01334c]/30"
+                                >
+                                    <Plus className="w-3 h-3" /> Add Award
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="space-y-3">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Media Features</label>
+                            <div className="space-y-3 max-h-40 overflow-y-auto pr-1">
+                                {media.map((m, i) => (
+                                    <div key={i} className="flex gap-2 items-center bg-slate-50 border border-slate-200 rounded-lg p-2 group hover:bg-white hover:shadow-sm transition-all">
+                                        <input
+                                            type="text"
+                                            value={m.name || ''}
+                                            onChange={(e) => {
+                                                const updated = [...media];
+                                                updated[i] = { ...m, name: e.target.value };
+                                                setFieldValue('mediaFeatures', updated);
+                                            }}
+                                            placeholder="Publication/Feature Name"
+                                            className="w-1/2 bg-white border border-slate-100 rounded px-2 py-1.5 text-xs focus:border-[#01334c] outline-none"
+                                        />
+                                        <input
+                                            type="text"
+                                            value={m.url || ''}
+                                            onChange={(e) => {
+                                                const updated = [...media];
+                                                updated[i] = { ...m, url: e.target.value };
+                                                setFieldValue('mediaFeatures', updated);
+                                            }}
+                                            placeholder="URL (optional)"
+                                            className="flex-1 bg-white border border-slate-100 rounded px-2 py-1.5 text-xs focus:border-[#01334c] outline-none"
+                                        />
+                                        <button
+                                            onClick={() => {
+                                                const updated = [...media];
+                                                updated.splice(i, 1);
+                                                setFieldValue('mediaFeatures', updated);
+                                            }}
+                                            className="p-1 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                        >
+                                            <Trash2 className="w-3 h-3" />
+                                        </button>
+                                    </div>
+                                ))}
+                                <button
+                                    onClick={() => setFieldValue('mediaFeatures', [...media, { name: '', url: '' }])}
+                                    className="flex items-center gap-1 text-xs text-[#01334c] hover:bg-[#01334c]/5 px-2 py-2 rounded-lg w-full justify-center border border-dashed border-[#01334c]/30"
+                                >
+                                    <Plus className="w-3 h-3" /> Add Media Feature
+                                </button>
+                            </div>
                         </div>
                     </div>
                 );

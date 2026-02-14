@@ -57,12 +57,30 @@ export const REVIEW_SECTIONS: ReviewSection[] = [
     },
     {
         id: 'career',
-        label: 'Career',
+        label: 'Career & Brands',
         description: "Where have you made an impact?",
         fields: ['positions'],
         guidance: 'Focus on recent and relevant experience.',
         tips: ['Highlight your role and company', 'Keep dates accurate'],
         icon: <div className="text-purple-500">💼</div>
+    },
+    {
+        id: 'impact',
+        label: 'Impact Created',
+        description: "What's your track record of success?",
+        fields: ['impactHeadline', 'impactStory', 'professionSpecificImpact'],
+        guidance: 'Quantify your achievements with data and results.',
+        tips: ['Use metrics and percentages', 'Focus on outcomes'],
+        icon: <div className="text-rose-500">🚀</div>
+    },
+    {
+        id: 'awards',
+        label: 'Awards & Recognition',
+        description: "What honors have you received?",
+        fields: ['awards', 'mediaFeatures'],
+        guidance: 'Social proof builds trust and credibility.',
+        tips: ['Include organization and year', 'Mention media features'],
+        icon: <div className="text-yellow-500">🏆</div>
     },
     {
         id: 'links',
@@ -457,6 +475,137 @@ export default function GuidedStepMessage({
                             type="tel"
                             placeholder="+1 (555) 000-0000"
                         />
+                    </div>
+                );
+
+            case 'impact':
+                return (
+                    <div className="space-y-4 animate-slide-in">
+                        <ModernInput
+                            label="Impact Headline"
+                            value={localData.impactHeadline}
+                            onChange={(e: any) => updateLocal('impactHeadline', e.target.value)}
+                            placeholder="e.g. Generated $2M in new revenue"
+                        />
+                        <ModernTextarea
+                            label="Impact Story"
+                            value={localData.impactStory}
+                            onChange={(e: any) => updateLocal('impactStory', e.target.value)}
+                            rows={5}
+                            placeholder="Describe your achievements and how you reached them..."
+                        />
+                        <div className="space-y-2">
+                            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-1">Metrics</label>
+                            {Object.entries(localData.professionSpecificImpact || {}).map(([key, val], i) => (
+                                <div key={i} className="flex gap-2">
+                                    <div className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-semibold text-slate-500">{key}</div>
+                                    <input
+                                        value={val as string}
+                                        onChange={e => {
+                                            const current = { ...(localData.professionSpecificImpact || {}) };
+                                            current[key] = e.target.value;
+                                            updateLocal('professionSpecificImpact', current);
+                                        }}
+                                        className="flex-[2] bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#01334c] shadow-sm"
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                );
+
+            case 'awards':
+                return (
+                    <div className="space-y-4 animate-slide-in">
+                        <div className="space-y-2">
+                            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-1">Awards</label>
+                            {(localData.awards || []).map((a, i) => (
+                                <div key={i} className="p-3 bg-white border border-slate-200 rounded-xl shadow-sm relative group">
+                                    <button
+                                        onClick={() => {
+                                            const newA = [...(localData.awards || [])];
+                                            newA.splice(i, 1);
+                                            updateLocal('awards', newA);
+                                        }}
+                                        className="absolute top-2 right-2 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 p-1"
+                                    >
+                                        <X size={12} />
+                                    </button>
+                                    <input
+                                        value={a.title}
+                                        onChange={e => {
+                                            const newA = [...(localData.awards || [])];
+                                            newA[i] = { ...newA[i], title: e.target.value };
+                                            updateLocal('awards', newA);
+                                        }}
+                                        className="w-full font-bold text-slate-800 text-sm mb-1 outline-none"
+                                        placeholder="Award Title"
+                                    />
+                                    <div className="flex gap-2">
+                                        <input
+                                            value={a.organization || ''}
+                                            onChange={e => {
+                                                const newA = [...(localData.awards || [])];
+                                                newA[i] = { ...newA[i], organization: e.target.value };
+                                                updateLocal('awards', newA);
+                                            }}
+                                            className="flex-1 text-xs text-slate-500 outline-none"
+                                            placeholder="Organization"
+                                        />
+                                        <input
+                                            value={a.year || ''}
+                                            onChange={e => {
+                                                const newA = [...(localData.awards || [])];
+                                                newA[i] = { ...newA[i], year: e.target.value };
+                                                updateLocal('awards', newA);
+                                            }}
+                                            className="w-16 text-xs text-slate-400 outline-none text-right"
+                                            placeholder="Year"
+                                        />
+                                    </div>
+                                </div>
+                            ))}
+                            <button
+                                onClick={() => updateLocal('awards', [...(localData.awards || []), { title: '', organization: '', year: '' }])}
+                                className="text-xs text-[#01334c] font-semibold py-2 rounded-lg w-full border border-dashed border-[#01334c]/20"
+                            >
+                                + Add Award
+                            </button>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-1">Media Features</label>
+                            {(localData.mediaFeatures || []).map((m, i) => (
+                                <div key={i} className="flex gap-2 group">
+                                    <input
+                                        value={m.name}
+                                        onChange={e => {
+                                            const newM = [...(localData.mediaFeatures || [])];
+                                            newM[i] = { ...newM[i], name: e.target.value };
+                                            updateLocal('mediaFeatures', newM);
+                                        }}
+                                        className="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-[#01334c]"
+                                        placeholder="Name"
+                                    />
+                                    <button
+                                        onClick={() => {
+                                            const newM = [...(localData.mediaFeatures || [])];
+                                            newM.splice(i, 1);
+                                            updateLocal('mediaFeatures', newM);
+                                        }}
+                                        className="p-2 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100"
+                                    >
+                                        <X size={12} />
+                                    </button>
+                                </div>
+                            ))}
+                            <button
+                                onClick={() => updateLocal('mediaFeatures', [...(localData.mediaFeatures || []), { name: '', url: '' }])}
+                                className="text-xs text-[#01334c] font-semibold py-2 rounded-lg w-full border border-dashed border-[#01334c]/20"
+                            >
+                                + Add Media
+                            </button>
+                        </div>
                     </div>
                 );
 

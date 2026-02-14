@@ -109,33 +109,49 @@
 /* A4 Paper Dimensions */
 .a4-page {
     width: 210mm;
+    min-height: 297mm;
     background: white;
     margin: 0 auto;
     padding: 0;
-    color: #1a202c;
+    color: #1e293b;
     overflow: visible;
+}
+
+.content-wrapper {
+    width: 100%;
+    max-width: 794px;
+    margin: 0 auto;
+    padding: 50px 60px;
+    background: white;
+}
+
+.pdf-page-break {
+    page-break-before: always;
+    break-before: page;
+    height: 0;
+    margin: 0;
+    border: none;
+    display: block;
+}
+
+.no-break {
+    break-inside: avoid;
+    page-break-inside: avoid;
 }
 
 /* Styles specifically for the content from index.html */
 /* Copied from index.html > style */
 
 .page {
-    width: 210mm;
-    height: 296.8mm;
-    /* Safety margin */
+    /* Removed fixed height and overflow to allow continuous flow */
+    width: 100%;
     background: white;
-    padding: 40px;
+    padding: 20px 0;
     position: relative;
     display: flex;
     flex-direction: column;
     font-family: var(--font-poppins), sans-serif;
     box-sizing: border-box;
-    overflow: hidden;
-}
-
-.page:not(:last-child) {
-    page-break-after: always;
-    break-after: page;
 }
 
 .no-shadow,

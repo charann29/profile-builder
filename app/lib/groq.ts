@@ -87,8 +87,9 @@ CRITICAL RULES — follow these EXACTLY:
 - "tagline": LinkedIn headline. MAX 70 characters. Make it magnetic — should make someone stop scrolling.
   If headline is generic (e.g., "Open to opportunities"), rewrite using their actual role + impact.
 - "profilePhoto": Extract the primary profile picture URL. 
-  EXTRACTION LOGIC — **EXTREMELY AGGRESSIVE**: Scan the ENTIRE source JSON for any field containing a URL. Prioritize URLs found in keys like "pictureUrl", "profile_pic", "image_url", "photo_url", "profile_image", or "avatar". 
+  EXTRACTION LOGIC — **EXTREMELY AGGRESSIVE**: Scan the ENTIRE source JSON for any field containing a URL. Prioritize URLs found in keys like "profile_pic_url", "pictureUrl", "profile_pic", "image_url", "photo_url", "profile_image", "avatar", or "landscape_photo". 
   If multiple URLs exist, pick the highest resolution one. If missing, leave empty — never invent a URL.
+  NOTE: LinkedIn URLs are often very long and contain many parameters — extract the FULL URL.
 - "topHighlights": EXACTLY 3 key achievement lines. MAX 35 characters each. These are HOOKS.
   EXTRACTION LOGIC — scan the entire profile for:
     • Numbers and metrics (10,000+, 500+, 15 years, ₹50Cr)
@@ -228,7 +229,7 @@ EDGE CASES:
 - If a field is empty/missing, leave it as-is — don't fill it with generic content.
 - Handle positions with missing descriptions gracefully — polish only what exists.
 - Ensure all arrays maintain their original length (don't add or remove items).
-- **STRICT REQUIREMENT**: Return ALL fields present in the input JSON, even if they were not modified or polished. NEVER drop fields like "profilePhoto", "socialLinks", or "contact".
+- **STRICT REQUIREMENT**: Return ALL fields present in the input JSON, even if they were not modified or polished. NEVER drop fields like "profilePhoto", "socialLinks", or "contact". If "profilePhoto" is a URL, preserve it EXACTLY as-is.
 
 Input Data:
 ${JSON.stringify(data, null, 2)}
@@ -289,10 +290,11 @@ RULE: Match the user's professional tone. Formal for CAs/lawyers. Bold for entre
 - "expertiseDescriptions": MAX 35 chars per description. Explains the value/impact of the expertise.
 RULE: Be specific and impactful. "Business Consulting" is generic → "Growth Strategy Consulting" is better.`,
 
-    career: `This is the CAREER section — brands and work experience.
-- "positions": Array of { title (MAX 40 chars), company (MAX 25 chars), duration }
-  Show the most impressive roles first. Include company name, your title, and duration.
-RULE: Allow up to 10 brands. Preserve factual accuracy — only enhance presentation.`,
+    career: `This is the CAREER & BRANDS section — focusing on work experience and brands worked with.
+- "positions": Array of { title, company, location, duration, description, logo }
+  This is the primary way to show "Brands Worked". If a company has a logo URL, include it.
+- "brands": [{ name, role, duration }] — another way to store brand associations.
+RULE: Emphasize brand association and roles. Order by recency.`,
 
     links: `This is the LINKS section — social media and online presence.
 - "socialLinks": Object with linkedin (primary, required), website, instagram, twitter, facebook, youtube, companyWebsite
@@ -301,7 +303,18 @@ RULE: Only clean up URL formatting, don't invent URLs.`,
 
     contact: `This is the CONTACT section — how people reach the user.
 - "contact": Object with emailPrimary and phonePrimary
-RULE: Never modify contact details — just ensure formatting is clean. Don't invent contact info.`,
+RULE: Never modify contact details — just ensure formatting is clean. Don't edit contact info.`,
+
+    impact: `This is the IMPACT section — showcasing professional impact and outreach.
+- "impactHeadline": A punchy one-liner about the user's impact (MAX 50 characters).
+- "impactStory": A brief narrative or list of achievements (MAX 1000 characters).
+- "professionSpecificImpact": A record of impact metrics (e.g., { "Revenue Growth": "30%", "Team Built": "50+ people" }).
+RULE: Use numbers and metrics. Quantify everything.`,
+
+    awards: `This is the AWARDS & RECOGNITION section.
+- "awards": Array of { title, organization, year, image }
+- "mediaFeatures": Array of { name, url }
+RULE: List honors and media coverage. Keep titles concise.`,
 };
 
 // ── Enhance a specific profile section with AI ────────────────────────────────

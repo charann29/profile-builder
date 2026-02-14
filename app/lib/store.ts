@@ -2,10 +2,13 @@ import { create } from 'zustand';
 import { ProfileData } from './schema';
 import type { User } from '@supabase/supabase-js';
 
-interface Message {
+export interface Message {
     text: string;
     sender: 'user' | 'bot';
     suggestedReplies?: string[];
+    type?: 'text' | 'guided_step';
+    sectionId?: string;
+    stepData?: any; // To hold specific data for the step if needed
 }
 
 type ConversationPhase = 'greeting' | 'gathering' | 'refining' | 'complete';
@@ -33,6 +36,8 @@ interface ProfileState {
 
     // Guided Review
     showGuidedReview: boolean;
+    guidedReviewActive: boolean;
+    currentGuidedStepIndex: number;
     guidedReviewStep: number;
 
     // Actions
@@ -53,6 +58,8 @@ interface ProfileState {
     setIsSaving: (v: boolean) => void;
     setProfileLoaded: (v: boolean) => void;
     setShowGuidedReview: (v: boolean) => void;
+    setGuidedReviewActive: (v: boolean) => void;
+    setCurrentGuidedStepIndex: (index: number) => void;
     setGuidedReviewStep: (step: number) => void;
 }
 
@@ -109,7 +116,9 @@ export const useProfileStore = create<ProfileState>((set) => ({
 
     // Guided Review
     showGuidedReview: false,
-    guidedReviewStep: 0,
+    guidedReviewActive: false,
+    currentGuidedStepIndex: 0,
+    guidedReviewStep: 0, // Deprecated but kept for now
 
     // Actions
     setProfileData: (data) =>
@@ -179,5 +188,7 @@ export const useProfileStore = create<ProfileState>((set) => ({
     setIsSaving: (v) => set({ isSaving: v }),
     setProfileLoaded: (v) => set({ profileLoaded: v }),
     setShowGuidedReview: (v) => set({ showGuidedReview: v }),
+    setGuidedReviewActive: (v) => set({ guidedReviewActive: v }),
+    setCurrentGuidedStepIndex: (index) => set({ currentGuidedStepIndex: index }),
     setGuidedReviewStep: (step) => set({ guidedReviewStep: step }),
 }));
