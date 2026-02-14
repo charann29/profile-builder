@@ -167,14 +167,15 @@ Return ONLY a valid JSON object. No markdown wrapping, no explanations.`;
         // The scraper wraps data in { success, data: [ profile ] }
         const profile = Array.isArray(raw.data) ? (raw.data[0] as Record<string, unknown>) : raw;
 
-        // Profile photo — extract the highest-res version
+        // Profile photo — extract the highest-res version and route through proxy
         const pictureUrl = (profile.pictureUrl || profile.profile_pic_url || profile.profilePicUrl || '') as string;
         if (pictureUrl && typeof pictureUrl === 'string' && pictureUrl.startsWith('http')) {
             // Try to get a higher-res version by adjusting the LinkedIn URL
             const highRes = pictureUrl
                 .replace(/scale_100_100/, 'scale_400_400')
                 .replace(/scale_200_200/, 'scale_400_400');
-            deterministic.profilePhoto = highRes;
+            // Route through our server-side proxy to bypass LinkedIn CDN hotlinking (403)
+            deterministic.profilePhoto = `/api/proxy-image?url=${encodeURIComponent(highRes)}`;
         }
 
         // LinkedIn URL — construct from publicIdentifier if available

@@ -22,6 +22,10 @@ function escapeHtml(str: string): string {
 function sanitizeUrl(url: string): string {
   if (!url || typeof url !== 'string') return '';
   const trimmed = url.trim();
+  // Allow our own proxy URLs (relative)
+  if (trimmed.startsWith('/api/')) {
+    return escapeHtml(trimmed);
+  }
   // Only allow http://, https://, protocol-relative //, and data:image/
   if (/^https?:\/\//i.test(trimmed) || /^\/\//i.test(trimmed) || /^data:image\//i.test(trimmed)) {
     return escapeHtml(trimmed);
@@ -31,6 +35,21 @@ function sanitizeUrl(url: string): string {
     return escapeHtml('https://' + trimmed);
   }
   return ''; // Return empty string instead of '#' to avoid broken images
+}
+
+/**
+ * Wraps LinkedIn CDN URLs through our server-side proxy to avoid 403 hotlinking errors.
+ * Non-LinkedIn URLs are returned as-is.
+ */
+function proxyLinkedInUrl(url: string): string {
+  if (!url) return url;
+  // Already proxied
+  if (url.startsWith('/api/proxy-image')) return url;
+  // Only proxy LinkedIn CDN URLs
+  if (url.includes('media.licdn.com') || url.includes('static.licdn.com')) {
+    return `/api/proxy-image?url=${encodeURIComponent(url)}`;
+  }
+  return url;
 }
 
 // ─── Icon Maps ────────────────────────────────────────────────────────────────
@@ -175,7 +194,7 @@ export const renderProfile = (data: Partial<ProfileData>) => {
   const eAboutMe = escapeHtml(aboutMe);
   const eTitle = escapeHtml(professionalTitle);
   const eStory = escapeHtml(personalStory30);
-  const sPhoto = sanitizeUrl(profilePhoto);
+  const sPhoto = sanitizeUrl(proxyLinkedInUrl(profilePhoto));
   const eImpactHeadline = escapeHtml(impactHeadline);
   const eSuperpower = escapeHtml(superpower);
   const eKnownFor = escapeHtml(knownFor);
@@ -269,7 +288,7 @@ export const renderProfile = (data: Partial<ProfileData>) => {
       const companyName = ((b as { company?: string }).company || '').trim();
       const safeName = escapeHtml(companyName);
       if (b.logo) {
-        const safeLogo = sanitizeUrl(b.logo);
+        const safeLogo = sanitizeUrl(proxyLinkedInUrl(b.logo));
         return `<div class="logo-placeholder" style="padding:0;overflow:hidden;background:#fff;border:1px solid #eee;border-radius:8px;">
           <img src="${safeLogo}" alt="${safeName}" style="height:45px;max-width:110px;object-fit:contain;" onerror="this.style.display='none';this.parentElement.textContent='${safeName}'" />
         </div>`;
