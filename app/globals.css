@@ -23,7 +23,7 @@
     --color-muted-foreground: var(--muted-foreground);
     --color-border: var(--border);
 
-    --font-sans: var(--font-inter);
+    --font-sans: var(--font-poppins);
     --font-mono: var(--font-geist-mono);
     --font-poppins: var(--font-poppins);
 }
