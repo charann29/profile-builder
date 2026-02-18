@@ -167,6 +167,26 @@ const REVIEW_SECTIONS: ReviewSection[] = [
     ],
   },
   {
+    id: "awards",
+    label: "Awards & Recognition",
+    description: "Honors, awards, and media features.",
+    emptyPrompt: "No awards found. Add your recognitions?",
+    selector: ".awards-section",
+    fields: ["awards", "mediaFeatures"],
+    hasData: (d) =>
+      !!(
+        (d.awards && d.awards.length > 0) ||
+        (d.mediaFeatures && d.mediaFeatures.length > 0)
+      ),
+    guidance:
+      "Social proof builds massive credibility. List your honors, awards, and any times you've been featured in the media.",
+    tips: [
+      "Include the organization that gave the award",
+      "Add the year for context",
+      "Mention media features (interviews, articles, podcasts)",
+    ],
+  },
+  {
     id: "education",
     label: "Education",
     description: "Your academic background and qualifications.",
@@ -212,26 +232,7 @@ const REVIEW_SECTIONS: ReviewSection[] = [
       "Relevant certifications only.",
     ],
   },
-  {
-    id: "awards",
-    label: "Awards & Recognition",
-    description: "Honors, awards, and media features.",
-    emptyPrompt: "No awards found. Add your recognitions?",
-    selector: ".awards-section",
-    fields: ["awards", "mediaFeatures"],
-    hasData: (d) =>
-      !!(
-        (d.awards && d.awards.length > 0) ||
-        (d.mediaFeatures && d.mediaFeatures.length > 0)
-      ),
-    guidance:
-      "Social proof builds massive credibility. List your honors, awards, and any times you've been featured in the media.",
-    tips: [
-      "Include the organization that gave the award",
-      "Add the year for context",
-      "Mention media features (interviews, articles, podcasts)",
-    ],
-  },
+
 
   {
     id: "contact",
@@ -802,19 +803,19 @@ export default function GuidedReviewOverlay({
               )}
               {((getFieldValue("topHighlights") as string[]) || []).length <
                 3 && (
-                <button
-                  onClick={() => {
-                    const highlights = [
-                      ...((getFieldValue("topHighlights") as string[]) || []),
-                      "",
-                    ];
-                    setFieldValue("topHighlights", highlights);
-                  }}
-                  className="flex items-center gap-1 text-xs text-[#01334c] hover:bg-[#01334c]/5 px-2 py-1.5 rounded-lg border border-dashed border-[#01334c]/30 w-full justify-center transition-all"
-                >
-                  <Plus className="w-3 h-3" /> Add highlight
-                </button>
-              )}
+                  <button
+                    onClick={() => {
+                      const highlights = [
+                        ...((getFieldValue("topHighlights") as string[]) || []),
+                        "",
+                      ];
+                      setFieldValue("topHighlights", highlights);
+                    }}
+                    className="flex items-center gap-1 text-xs text-[#01334c] hover:bg-[#01334c]/5 px-2 py-1.5 rounded-lg border border-dashed border-[#01334c]/30 w-full justify-center transition-all"
+                  >
+                    <Plus className="w-3 h-3" /> Add highlight
+                  </button>
+                )}
             </div>
           </div>
         );
@@ -885,7 +886,7 @@ export default function GuidedReviewOverlay({
                     </button>
                     <input
                       type="text"
-                      value={area}
+                      value={area || ""}
                       onChange={(e) => {
                         const areas = [
                           ...((getFieldValue("expertiseAreas") as string[]) ||
@@ -923,25 +924,25 @@ export default function GuidedReviewOverlay({
             </div>
             {((getFieldValue("expertiseAreas") as string[]) || []).length <
               5 && (
-              <button
-                onClick={() => {
-                  const areas = [
-                    ...((getFieldValue("expertiseAreas") as string[]) || []),
-                    "",
-                  ];
-                  const descs = [
-                    ...((getFieldValue("expertiseDescriptions") as string[]) ||
-                      []),
-                    "",
-                  ];
-                  setFieldValue("expertiseAreas", areas);
-                  setFieldValue("expertiseDescriptions", descs);
-                }}
-                className="flex items-center gap-1 text-xs text-[#01334c] hover:bg-[#01334c]/5 px-2 py-2 rounded-lg w-full justify-center border border-dashed border-[#01334c]/30"
-              >
-                <Plus className="w-3 h-3" /> Add expertise
-              </button>
-            )}
+                <button
+                  onClick={() => {
+                    const areas = [
+                      ...((getFieldValue("expertiseAreas") as string[]) || []),
+                      "",
+                    ];
+                    const descs = [
+                      ...((getFieldValue("expertiseDescriptions") as string[]) ||
+                        []),
+                      "",
+                    ];
+                    setFieldValue("expertiseAreas", areas);
+                    setFieldValue("expertiseDescriptions", descs);
+                  }}
+                  className="flex items-center gap-1 text-xs text-[#01334c] hover:bg-[#01334c]/5 px-2 py-2 rounded-lg w-full justify-center border border-dashed border-[#01334c]/30"
+                >
+                  <Plus className="w-3 h-3" /> Add expertise
+                </button>
+              )}
           </div>
         );
 
@@ -972,7 +973,7 @@ export default function GuidedReviewOverlay({
                   <div className="grid grid-cols-2 gap-2">
                     <input
                       type="text"
-                      value={pos.title}
+                      value={pos.title || ""}
                       onChange={(e) => {
                         const updated = [...positions];
                         updated[i] = { ...pos, title: e.target.value };
@@ -983,7 +984,7 @@ export default function GuidedReviewOverlay({
                     />
                     <input
                       type="text"
-                      value={pos.company}
+                      value={pos.company || ""}
                       onChange={(e) => {
                         const updated = [...positions];
                         updated[i] = { ...pos, company: e.target.value };
@@ -1596,11 +1597,10 @@ export default function GuidedReviewOverlay({
       {/* Right-docked sliding panel */}
       <div
         key={cardKey}
-        className={`fixed top-0 right-0 h-full w-[460px] bg-white shadow-2xl shadow-slate-900/30 border-l border-slate-200 flex flex-col z-[9999] ${
-          isTransitioning
+        className={`fixed top-0 right-0 h-full w-[460px] bg-white shadow-2xl shadow-slate-900/30 border-l border-slate-200 flex flex-col z-[9999] ${isTransitioning
             ? "opacity-0 translate-x-4"
             : "opacity-100 translate-x-0"
-        }`}
+          }`}
         style={{
           animation: "guided-panel-slide-in 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
         }}
