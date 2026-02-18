@@ -75,6 +75,9 @@ export default function Home() {
   >("idle");
   const [scrapeMessage, setScrapeMessage] = useState("");
 
+  // New Onboarding Choice Dialog State
+  const [showOnboardingChoice, setShowOnboardingChoice] = useState(false);
+
   // Edit Form State
   const [showEditForm, setShowEditForm] = useState(false);
   const [tempProfileData, setTempProfileData] =
@@ -135,12 +138,12 @@ export default function Home() {
         setProfileLoaded(true);
         // Only show LinkedIn modal if they never completed it
         if (!row.linkedin_imported) {
-          setShowLinkedinModal(true);
+          setShowOnboardingChoice(true);
         }
       } else {
         // First-time user — show LinkedIn popup
         setProfileLoaded(true);
-        setShowLinkedinModal(true);
+        setShowOnboardingChoice(true);
       }
     };
 
@@ -151,7 +154,7 @@ export default function Home() {
         loadUserProfile(session.user.id);
       } else {
         // Not logged in — show LinkedIn modal (auth gate will handle login)
-        setShowLinkedinModal(true);
+        setShowOnboardingChoice(true);
         setProfileLoaded(true);
       }
     });
@@ -475,6 +478,60 @@ export default function Home() {
 
   return (
     <div className="bg-white text-slate-900 h-screen overflow-hidden flex selection:bg-[#01334c] selection:text-white font-[family-name:var(--font-inter)]">
+      {/* Onboarding Choice Modal */}
+      {showOnboardingChoice && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-3xl shadow-2xl shadow-slate-900/20 w-full max-w-md mx-4 overflow-hidden border border-slate-100 animate-slide-up p-8 text-center">
+
+            <div className="w-16 h-16 rounded-2xl bg-[#01334c]/5 flex items-center justify-center mx-auto mb-6">
+              <Sparkles className="w-8 h-8 text-[#01334c]" />
+            </div>
+
+            <h2 className="text-2xl font-bold text-slate-900 tracking-tight mb-3">
+              How would you like to start?
+            </h2>
+            <p className="text-slate-500 mb-8">
+              We can extract your professional history from LinkedIn or help you build a new profile from scratch.
+            </p>
+
+            <div className="space-y-3">
+              <button
+                onClick={() => {
+                  setShowOnboardingChoice(false);
+                  setShowLinkedinModal(true);
+                }}
+                className="w-full py-4 rounded-xl bg-[#0077b5] hover:bg-[#006097] text-white text-sm font-bold uppercase tracking-wider transition-all duration-300 shadow-lg shadow-[#0077b5]/20 hover:shadow-[#0077b5]/40 active:scale-[0.98] flex items-center justify-center gap-3"
+              >
+                <Linkedin className="w-5 h-5" />
+                <span>Import from LinkedIn</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  const doSkip = () => {
+                    setShowOnboardingChoice(false);
+                    setTempProfileData({});
+                    setShowEditForm(true);
+                    // Mark LinkedIn as completed (skipped) so popup won't show on refresh
+                    setHasCompletedLinkedIn(true);
+                    if (user) markLinkedinImported(user.id);
+                  };
+                  if (!requireAuth(doSkip)) return;
+                  doSkip();
+                }}
+                className="w-full py-4 rounded-xl bg-white border-2 border-slate-100 hover:border-[#01334c]/20 hover:bg-slate-50 text-slate-600 hover:text-[#01334c] text-sm font-bold uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-3"
+              >
+                <Pencil className="w-5 h-5" />
+                <span>Continue from Scratch</span>
+              </button>
+            </div>
+            <p className="text-[10px] text-slate-400 mt-6 max-w-xs mx-auto">
+              Importing from LinkedIn gives you a head start, but you can always edit everything later.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* LinkedIn URL Modal */}
       {showLinkedinModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in">
@@ -719,8 +776,8 @@ export default function Home() {
             >
               <div
                 className={`w-9 h-9 rounded-full flex-shrink-0 flex items-center justify-center shadow-md transition-transform duration-300 group-hover:scale-110 ${msg.sender === "user"
-                    ? "bg-[#01334c] ring-4 ring-[#01334c]/10"
-                    : "bg-slate-50 border border-slate-100"
+                  ? "bg-[#01334c] ring-4 ring-[#01334c]/10"
+                  : "bg-slate-50 border border-slate-100"
                   }`}
               >
                 {msg.sender === "user" ? (
@@ -732,8 +789,8 @@ export default function Home() {
               <div className="space-y-2 max-w-[290px]">
                 <div
                   className={`px-5 py-3.5 rounded-3xl text-[14px] leading-relaxed shadow-sm ${msg.sender === "user"
-                      ? "bg-[#01334c] text-white rounded-tr-none shadow-[#01334c]/20"
-                      : "bg-slate-50 border border-slate-100 text-slate-600 rounded-tl-none"
+                    ? "bg-[#01334c] text-white rounded-tr-none shadow-[#01334c]/20"
+                    : "bg-slate-50 border border-slate-100 text-slate-600 rounded-tl-none"
                     }`}
                 >
                   <p className="whitespace-pre-wrap">{msg.text}</p>
