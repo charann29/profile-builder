@@ -38,7 +38,7 @@
         transition: all 0.8s ease-out;
       }
 
-      .page-container.visible {
+      .page-container {
         opacity: 1;
         transform: translateY(0);
       }
@@ -250,12 +250,6 @@
 
     <script>
       lucide.createIcons();
-      window.addEventListener("DOMContentLoaded", () => {
-        const page = document.getElementById("landingPage");
-        setTimeout(() => {
-          page.classList.add("visible");
-        }, 100);
-      });
     </script>
   </body>
 </html>
