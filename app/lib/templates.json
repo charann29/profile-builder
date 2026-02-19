@@ -1,0 +1,74 @@
+[
+    {
+        "id": "temp-1",
+        "name": "The Modern Executive",
+        "description": "A clean, high-impact design favored by establishing professionals. Highlights key achievements and uses a strong visual hierarchy.",
+        "thumbnail": "/templates/modern-executive.png",
+        "features": [
+            "Clean Layout",
+            "Metric Focused",
+            "Blue Accent"
+        ],
+        "category": "Professional",
+        "dimensions": {
+            "width": 794,
+            "height": 1123
+        }
+    },
+    {
+        "id": "temp-2",
+        "name": "Creative Portfolio",
+        "description": "Perfect for designers and creatives. Emphasizes visual storytelling and allows for more personal expression.",
+        "thumbnail": "/templates/creative-portfolio.png",
+        "features": [
+            "Visual Heavy",
+            "Timeline View",
+            "Dark Mode Option"
+        ],
+        "category": "Creative",
+        "dimensions": {
+            "width": 800,
+            "height": 1200
+        }
+    },
+    {
+        "id": "temp-3",
+        "name": "Minimalist Consultant",
+        "description": "For the senior consultant who lets the work speak for itself. Uses ample whitespace and sophisticated typography.",
+        "thumbnail": "/templates/minimalist.png",
+        "features": [
+            "Whitespace",
+            "Serif Fonts",
+            "Sophisticated"
+        ],
+        "category": "Professional",
+        "dimensions": {
+            "width": 960,
+            "height": 540
+        }
+    },
+    {
+        "id": "custom-temp-1",
+        "name": "My Custom Template",
+        "description": "",
+        "thumbnail": "/templates/placeholder.png",
+        "features": [],
+        "category": "Simple",
+        "dimensions": {
+            "width": 794,
+            "height": 1123
+        }
+    },
+    {
+        "id": "ATS-friendly-resume",
+        "name": "ATS friendly resume",
+        "description": "",
+        "thumbnail": "/templates/placeholder.png",
+        "features": [],
+        "category": "Simple",
+        "dimensions": {
+            "width": 794,
+            "height": 1123
+        }
+    }
+]

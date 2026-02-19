@@ -20,6 +20,16 @@ export const ProfileSchema = z.object({
   profilePhoto: z.string().optional(),
   topHighlights: z.array(z.string()).max(3).optional(),
 
+  // Design Preferences
+  selectedTemplate: z.string().optional(),
+  savedDesigns: z.array(z.object({
+    id: z.string(),
+    templateId: z.string(),
+    name: z.string(),
+    updatedAt: z.string(),
+    previewImage: z.string().optional(),
+  })).optional(),
+
   // Section 1B: Personal Story & Strengths
   personalStory30: z.string().max(200).optional(),
   storyType: z.enum(["Rise", "Pivot", "Impact", "Mission"]).optional(),

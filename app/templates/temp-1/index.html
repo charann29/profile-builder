@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>CA Abhishek Boddu Profile</title>
+    <title>{{fullName}} Profile</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -335,75 +335,50 @@
     <div class="container">
       <div class="header-section">
         <div class="profile-wrapper">
-          <img src="./assets/profile.png" alt="CA Abhishek Boddu" />
+          <img src="{{profilePhoto}}" alt="{{fullName}}" />
         </div>
         <div class="info-card">
-          <h1>CA Abhishek Boddu</h1>
-          <p class="subtitle">Founder & CEO of OnEasy</p>
+          <h1>{{fullName}}</h1>
+          <p class="subtitle">{{tagline}}</p>
           <div class="divider"></div>
           <ul class="info-list">
-            <li>Virtual CFRO</li>
-            <li>Served 50+ brands across 10+ industries</li>
-            <li>Growth Trainer - GrowthClub</li>
+            {{#each topHighlights}}
+            <li>{{this}}</li>
+            {{/each}}
           </ul>
           <div class="social-links">
-            <a href="#"
-              ><img
-                src="https://cdn-icons-png.flaticon.com/512/174/174857.png"
-                class="social-icon"
-            /></a>
-            <a href="#"
-              ><img
-                src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png"
-                class="social-icon"
-            /></a>
-            <a href="#"
-              ><img
-                src="https://cdn-icons-png.flaticon.com/512/733/733547.png"
-                class="social-icon"
-            /></a>
-            <a href="http://www.digitalconnect.in" class="website-url"
-              >www.digitalconnect.in</a
-            >
+            {{#if socialLinks.linkedin}}
+            <a href="{{socialLinks.linkedin}}"><img src="https://cdn-icons-png.flaticon.com/512/174/174857.png" class="social-icon" /></a>
+            {{/if}}
+            {{#if socialLinks.instagram}}
+            <a href="{{socialLinks.instagram}}"><img src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png" class="social-icon" /></a>
+            {{/if}}
+            {{#if socialLinks.twitter}}
+            <a href="{{socialLinks.twitter}}"><img src="https://cdn-icons-png.flaticon.com/512/733/733547.png" class="social-icon" /></a>
+            {{/if}}
+            {{#if socialLinks.website}}
+            <a href="{{socialLinks.website}}" class="website-url">{{socialLinks.website}}</a>
+            {{/if}}
           </div>
         </div>
       </div>
 
-      <div class="bio-box">writing all about abhishek boddu</div>
+      <div class="bio-box">{{{aboutMe}}}</div>
 
       <div class="roles-container">
         <div class="section-title" style="color: #33691e">
           Key Roles and Expertise
         </div>
         <div class="roles-grid">
+          {{#each expertiseAreas}}
           <div class="role-item">
-            <img
-              src="https://cdn-icons-png.flaticon.com/512/1998/1998087.png"
-            />
-            <h3>Digital Marketing</h3>
-            <p>
-              Helping Startups and Businesses to scale their digital presence
-            </p>
+            <img src="https://cdn-icons-png.flaticon.com/512/1998/1998087.png" />
+            <h3>{{this}}</h3>
+            {{#if ../expertiseDescriptions}}
+            <p>{{lookup ../expertiseDescriptions @index}}</p>
+            {{/if}}
           </div>
-          <div class="role-item">
-            <img
-              src="https://cdn-icons-png.flaticon.com/512/2620/2620667.png"
-            />
-            <h3>Branding & Consulting</h3>
-            <p>
-              Tailored PR and Branding Strategies to scale business across
-              online and offline
-            </p>
-          </div>
-          <div class="role-item">
-            <img
-              src="https://cdn-icons-png.flaticon.com/512/2103/2103633.png"
-            />
-            <h3>GTM Strategies</h3>
-            <p>
-              Scaling strategies across industries. Automating Lead Generation
-            </p>
-          </div>
+          {{/each}}
         </div>
       </div>
 
@@ -415,12 +390,11 @@
           Brands Worked
         </div>
         <div class="brand-logos">
+          {{#each brands}}
           <div class="brand-item" style="background: #222; border-radius: 50%">
-            T WORKS
+            {{this.name}}
           </div>
-          <div class="brand-item" style="background: #e53935">
-            STARTUP<br />utsav
-          </div>
+          {{/each}}
         </div>
       </div>
     </div>
@@ -433,18 +407,13 @@
         <div class="impact-item">
           <div class="impact-icon">👥</div>
           <div class="impact-text">
-            <strong>Public Speaking & Training:</strong> Reached over
-            <span>40,000 individuals</span> through talks, digital marketing,
-            and literacy programs
+            <strong>Impact Headline:</strong> {{impactHeadline}}
           </div>
         </div>
         <div class="impact-item">
           <div class="impact-icon">🌐</div>
           <div class="impact-text">
-            <strong>Manovignanayatra (2022):</strong> Traveled across 30
-            districts in AP & TS raising awareness about digital marketing,
-            self-employment, and Cyber Security
-            <span>(Impacting 50,000+ People)</span>
+            <strong>Overview:</strong> {{impactStory}}
           </div>
         </div>
       </div>
@@ -454,17 +423,11 @@
           Awards and Recognition
         </div>
         <ul class="awards-list">
+          {{#each awards}}
           <li>
-            <strong>Pride of Hyderabad 2023:</strong> By Government of Telangana
+            <strong>{{this.title}}:</strong> {{#if this.organization}}By {{this.organization}}{{/if}} {{#if this.year}}({{this.year}}){{/if}}
           </li>
-          <li>
-            <strong>Rashtriya Gaurav Award (2019):</strong> By Government of
-            Telangana
-          </li>
-          <li>
-            <strong>Swami Vivekananda Young Achiever Award (2019):</strong> By
-            CMR Group
-          </li>
+          {{/each}}
         </ul>
       </div>
 
@@ -486,15 +449,15 @@
       <div class="contact-footer">
         <div class="contact-unit">
           <img src="https://cdn-icons-png.flaticon.com/512/159/159832.png" />
-          +91 79893 73839
+          {{contact.phonePrimary}}
         </div>
         <div class="contact-unit">
           <img src="https://cdn-icons-png.flaticon.com/512/542/542689.png" />
-          nikeelu@digitalconnect.in
+          {{contact.emailPrimary}}
         </div>
         <div class="contact-unit">
           <img src="https://cdn-icons-png.flaticon.com/512/1006/1006771.png" />
-          www.digitalconnect.in
+          {{socialLinks.website}}
         </div>
       </div>
     </div>
