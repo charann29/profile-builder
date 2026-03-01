@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { MessageSquare, Plus, Trash2, X, FileText, Loader2 } from "lucide-react";
+import { MessageSquare, Plus, Trash2, X, FileText, Loader2, LogOut } from "lucide-react";
 import { useProfileStore } from "@/app/lib/store";
 import { deleteProfile, loadProfiles } from "@/app/lib/db";
 
@@ -9,9 +9,10 @@ interface ChatsSidebarProps {
     isOpen: boolean;
     onClose: () => void;
     onNewChat: () => void;
+    onLogout?: () => void;
 }
 
-export default function ChatsSidebar({ isOpen, onClose, onNewChat }: ChatsSidebarProps) {
+export default function ChatsSidebar({ isOpen, onClose, onNewChat, onLogout }: ChatsSidebarProps) {
     const {
         profilesList,
         activeProfileId,
@@ -23,6 +24,7 @@ export default function ChatsSidebar({ isOpen, onClose, onNewChat }: ChatsSideba
     } = useProfileStore();
 
     const [isDeleting, setIsDeleting] = React.useState<string | null>(null);
+    const [showLogoutConfirm, setShowLogoutConfirm] = React.useState(false);
 
     const handleNewChat = () => {
         resetChat();
@@ -156,7 +158,52 @@ export default function ChatsSidebar({ isOpen, onClose, onNewChat }: ChatsSideba
                         })
                     )}
                 </div>
+
+                {/* Logout area */}
+                {onLogout && (
+                    <div className="p-4 border-t border-slate-100 bg-slate-50/50">
+                        <button
+                            onClick={() => setShowLogoutConfirm(true)}
+                            className="w-full py-3 px-4 flex items-center justify-center gap-2 rounded-xl text-slate-500 hover:text-red-600 hover:bg-red-50 hover:border-red-100 border border-transparent font-medium text-sm transition-all shadow-sm bg-white"
+                        >
+                            <LogOut className="w-4 h-4" />
+                            Sign Out
+                        </button>
+                    </div>
+                )}
             </div>
+
+            {/* Logout Confirmation Modal */}
+            {showLogoutConfirm && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm animate-fade-in px-4">
+                    <div className="bg-white rounded-2xl shadow-xl shadow-slate-900/20 max-w-sm w-full p-6 animate-slide-up border border-slate-100">
+                        <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center mb-4 mx-auto">
+                            <LogOut className="w-6 h-6 text-red-500" />
+                        </div>
+                        <h3 className="text-lg font-bold text-center text-slate-800 mb-2">Sign Out</h3>
+                        <p className="text-slate-500 text-sm text-center mb-6">
+                            Are you sure you want to sign out of your account?
+                        </p>
+                        <div className="flex items-center gap-3">
+                            <button
+                                onClick={() => setShowLogoutConfirm(false)}
+                                className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-medium hover:bg-slate-50 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setShowLogoutConfirm(false);
+                                    if (onLogout) onLogout();
+                                }}
+                                className="flex-1 py-2.5 rounded-xl bg-red-500 text-white font-medium hover:bg-red-600 transition-colors shadow-sm shadow-red-500/20"
+                            >
+                                Sign Out
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     );
 }
