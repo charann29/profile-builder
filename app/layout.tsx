@@ -14,8 +14,8 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "ProfileArchitect AI | A4 Doc Builder",
-  description: "AI-powered document builder",
+  title: "OnEasy AI | World's First Human-less Financial Consultant & CA Firm",
+  description: "Your complete AI financial suite. From startup incorporation to business modeling, proposal building, and tax filing via specialized agents.",
 };
 
 export default function RootLayout({

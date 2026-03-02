@@ -30,18 +30,18 @@ export default function MasterLandingPage() {
 
                     <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-red-500/30 bg-red-500/10 text-red-400 text-xs font-bold tracking-widest uppercase shadow-[0_0_10px_rgba(239,68,68,0.1)] mb-8 mx-auto">
                         <Building2 className="w-4 h-4" />
-                        <span>World's First Human-less AI Financial Consultant Firm</span>
+                        <span>World's First Human-less AI-based Financial Consultant & CA Firm</span>
                     </div>
 
                     <h1 className="text-[3rem] sm:text-[4.5rem] lg:text-[5.5rem] font-black leading-[1.1] tracking-tight text-white mb-6">
-                        Your Complete <br />
+                        One Point of Contact for <br />
                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-red-600">
-                            Financial AI Suite
+                            All Your Financial Needs
                         </span>
                     </h1>
 
                     <p className="text-xl text-gray-400 max-w-3xl mx-auto leading-relaxed mb-10">
-                        From startup incorporation and business modeling to proposal building and tax filing. One intelligent umbrella for all your financial and operational needs.
+                        From startup incorporation and business modeling to proposal building and tax filing. Access all our specialized AI agents under one master umbrella.
                     </p>
 
                     <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
