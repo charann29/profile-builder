@@ -3,13 +3,13 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowRight, Menu, X, Building2, CheckCircle, Sparkles } from 'lucide-react';
 import { agentsData } from './_data/agents';
-import MasterNavbar from './_components/MasterNavbar';
+import Navbar from './_components/Navbar';
 import Footer from './home/_components/Footer';
 
-export default function MasterLandingPage() {
+export default function LandingPage() {
     return (
         <main className="min-h-screen bg-[#050505] text-white selection:bg-red-600 selection:text-white font-inter">
-            <MasterNavbar />
+            <Navbar />
 
             {/* Background Elements */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -41,7 +41,7 @@ export default function MasterLandingPage() {
                     </h1>
 
                     <p className="text-xl text-gray-400 max-w-3xl mx-auto leading-relaxed mb-10">
-                        From startup incorporation and business modeling to proposal building and tax filing. Access all our specialized AI agents under one master umbrella.
+                        From startup incorporation and business modeling to proposal building and tax filing. Access all our specialized AI agents under one umbrella.
                     </p>
 
                     <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">

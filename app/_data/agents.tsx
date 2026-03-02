@@ -17,10 +17,10 @@ export const agentsData = [
         title: "Business Model AI Agent",
         badge: "Core Tools",
         icon: <Presentation className="w-8 h-8 text-red-500" />,
-        description: "Validate your ideas instantly. Generate comprehensive competitor analysis, go-to-market strategy, and market sizing to establish your core business model, ready to export as a master document.",
+        description: "Validate your ideas instantly. Generate comprehensive competitor analysis, go-to-market strategy, and market sizing to establish your core business model, ready to export as a complete document.",
         link: "#",
         features: ["Idea Validation", "Competitor Analysis", "GTM Strategy"],
-        example: "User: I need a GTM strategy, competitor analysis, and pitch deck for my coffee brand.\nAI: Validate your idea instantly! Here is your generated master business model document outlining your market positioning."
+        example: "User: I need a GTM strategy, competitor analysis, and pitch deck for my coffee brand.\nAI: Validate your idea instantly! Here is your generated business model document outlining your market positioning."
     },
     {
         id: "financial-model",
