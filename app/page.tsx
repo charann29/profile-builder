@@ -1,17 +1,9 @@
 import React from 'react';
-<<<<<<< HEAD
-import Hero from './home/_components/Hero';
-import HowItWorks from './home/_components/HowItWorks';
-import Features from './home/_components/Features';
-import Testimonials from './home/_components/Testimonials';
-import FAQ from './home/_components/FAQ';
-=======
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowRight, Menu, X, Building2, CheckCircle, Sparkles } from 'lucide-react';
 import { agentsData } from './_data/agents';
 import MasterNavbar from './_components/MasterNavbar';
->>>>>>> a254bc2 (feat: adding new master landing page)
 import Footer from './home/_components/Footer';
 
 export default function MasterLandingPage() {
@@ -19,19 +11,6 @@ export default function MasterLandingPage() {
         <main className="min-h-screen bg-[#050505] text-white selection:bg-red-600 selection:text-white font-inter">
             <MasterNavbar />
 
-<<<<<<< HEAD
-export default function MarketingPage() {
-  return (
-    <main className="min-h-screen bg-[#050505]">
-      <Hero />
-      <HowItWorks />
-      <Features />
-      <Testimonials />
-      <FAQ />
-      <Footer />
-    </main>
-  );
-=======
             {/* Background Elements */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 <div className="absolute -top-[20%] -right-[10%] w-[600px] h-[600px] rounded-full bg-gradient-to-br from-red-600/[0.15] to-transparent blur-[120px]" />
