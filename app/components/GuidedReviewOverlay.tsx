@@ -693,7 +693,7 @@ export default function GuidedReviewOverlay({
           <div className="space-y-4 animate-fade-in-up">
             {/* ── Profile Photo ──────────────────── */}
             <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              <label className="text-[10px] font-black text-slate-900 uppercase tracking-wider">
                 Profile Photo
               </label>
               <input
@@ -756,7 +756,7 @@ export default function GuidedReviewOverlay({
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              <label className="text-[10px] font-black text-slate-900 uppercase tracking-wider">
                 Full Name
               </label>
               <input
@@ -767,7 +767,7 @@ export default function GuidedReviewOverlay({
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              <label className="text-[10px] font-black text-slate-900 uppercase tracking-wider">
                 Professional Title
               </label>
               <input
@@ -780,7 +780,7 @@ export default function GuidedReviewOverlay({
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              <label className="text-[10px] font-black text-slate-900 uppercase tracking-wider">
                 Tagline / Headline
               </label>
               <textarea
@@ -792,7 +792,7 @@ export default function GuidedReviewOverlay({
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              <label className="text-[10px] font-black text-slate-900 uppercase tracking-wider">
                 Top Highlights
               </label>
               {((getFieldValue("topHighlights") as string[]) || []).map(
@@ -852,7 +852,7 @@ export default function GuidedReviewOverlay({
         return (
           <div className="space-y-4 animate-fade-in-up">
             <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              <label className="text-[10px] font-black text-slate-900 uppercase tracking-wider">
                 About Me
               </label>
               <textarea
@@ -863,7 +863,7 @@ export default function GuidedReviewOverlay({
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              <label className="text-[10px] font-black text-slate-900 uppercase tracking-wider">
                 Personal Story (30 Words)
               </label>
               <textarea
@@ -881,7 +881,7 @@ export default function GuidedReviewOverlay({
       case "expertise":
         return (
           <div className="space-y-3 animate-fade-in-up">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+            <label className="text-[10px] font-black text-slate-900 uppercase tracking-wider">
               Expertise Areas
             </label>
             <div className="space-y-2.5">
@@ -978,7 +978,7 @@ export default function GuidedReviewOverlay({
           (getFieldValue("positions") as ProfileData["positions"]) || [];
         return (
           <div className="space-y-3 animate-fade-in-up">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+            <label className="text-[10px] font-black text-slate-900 uppercase tracking-wider">
               Work Positions
             </label>
             <div className="max-h-60 overflow-y-auto space-y-3 pr-1">
@@ -1097,7 +1097,7 @@ export default function GuidedReviewOverlay({
           <div className="space-y-3 animate-fade-in-up">
             {linkFields.map((lf) => (
               <div key={lf.key} className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                <label className="text-[10px] font-black text-slate-900 uppercase tracking-wider">
                   {lf.label}
                 </label>
                 <input
@@ -1123,7 +1123,7 @@ export default function GuidedReviewOverlay({
         return (
           <div className="space-y-4 animate-fade-in-up">
             <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              <label className="text-[10px] font-black text-slate-900 uppercase tracking-wider">
                 Email
               </label>
               <input
@@ -1138,7 +1138,7 @@ export default function GuidedReviewOverlay({
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              <label className="text-[10px] font-black text-slate-900 uppercase tracking-wider">
                 Phone
               </label>
               <input
@@ -1159,7 +1159,7 @@ export default function GuidedReviewOverlay({
         return (
           <div className="space-y-4 animate-fade-in-up">
             <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              <label className="text-[10px] font-black text-slate-900 uppercase tracking-wider">
                 Impact Headline
               </label>
               <input
@@ -1173,7 +1173,7 @@ export default function GuidedReviewOverlay({
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              <label className="text-[10px] font-black text-slate-900 uppercase tracking-wider">
                 Impact Story / Highlights
               </label>
               <textarea
@@ -1185,7 +1185,7 @@ export default function GuidedReviewOverlay({
               />
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              <label className="text-[10px] font-black text-slate-900 uppercase tracking-wider">
                 Specific Metrics
               </label>
               {Object.entries(
@@ -1231,7 +1231,7 @@ export default function GuidedReviewOverlay({
         return (
           <div className="space-y-6 animate-fade-in-up">
             <div className="space-y-3">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              <label className="text-[10px] font-black text-slate-900 uppercase tracking-wider">
                 Awards & Honors
               </label>
               <div className="space-y-3 max-h-48 overflow-y-auto pr-1">
@@ -1302,7 +1302,7 @@ export default function GuidedReviewOverlay({
             </div>
 
             <div className="space-y-3">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              <label className="text-[10px] font-black text-slate-900 uppercase tracking-wider">
                 Media Features
               </label>
               <div className="space-y-3 max-h-40 overflow-y-auto pr-1">
@@ -1368,7 +1368,7 @@ export default function GuidedReviewOverlay({
         return (
           <div className="space-y-6 animate-fade-in-up">
             <div className="flex items-center justify-between">
-              <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              <h3 className="text-[10px] font-black text-slate-900 uppercase tracking-wider">
                 Education History
               </h3>
               <button
@@ -1464,7 +1464,7 @@ export default function GuidedReviewOverlay({
         return (
           <div className="space-y-6 animate-fade-in-up">
             <div className="flex items-center justify-between">
-              <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              <h3 className="text-[10px] font-black text-slate-900 uppercase tracking-wider">
                 Skills & Competencies
               </h3>
               <button
@@ -1527,7 +1527,7 @@ export default function GuidedReviewOverlay({
         return (
           <div className="space-y-6 animate-fade-in-up">
             <div className="flex items-center justify-between">
-              <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              <h3 className="text-[10px] font-black text-slate-900 uppercase tracking-wider">
                 Certifications
               </h3>
               <button
@@ -1681,7 +1681,7 @@ export default function GuidedReviewOverlay({
           <div className="border-b border-slate-100">
             <button
               onClick={() => setShowGuidance(!showGuidance)}
-              className="w-full px-6 py-2.5 flex items-center gap-2 text-[10px] font-bold text-amber-700 uppercase tracking-wider bg-amber-50/60 hover:bg-amber-50 transition-colors"
+              className="w-full px-6 py-3 flex items-center gap-2 text-[11px] font-extrabold text-amber-900 uppercase tracking-widest bg-amber-200 hover:bg-amber-300 transition-colors shadow-sm"
             >
               <Lightbulb className="w-3 h-3" />
               <span>Expert Tips & Examples</span>

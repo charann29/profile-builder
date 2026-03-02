@@ -50,7 +50,7 @@ export async function modifyTemplateWithAI(inputs: {
     prompt: string;
     userData?: any;
 }) {
-    const { html, prompt } = inputs;
+    const { html, prompt, userData } = inputs;
 
     const userMessage = `
     CURRENT HTML:
@@ -58,6 +58,9 @@ export async function modifyTemplateWithAI(inputs: {
 
     USER INSTRUCTION:
     ${prompt}
+
+    USER DATA:
+    ${userData ? JSON.stringify(userData, null, 2) : 'No user data provided.'}
 
     Modify the HTML according to the instruction.
     `;

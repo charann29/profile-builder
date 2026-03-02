@@ -33,6 +33,11 @@ export default function TrialBanner({ onExpired }: TrialBannerProps) {
         msToTimeLeft(Math.max(0, TRIAL_END_MS - Date.now()))
     );
     const [dismissed, setDismissed] = useState(false);
+    const [isMounted, setIsMounted] = useState(false);
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
 
     useEffect(() => {
         // Don't run if already expired or dismissed
@@ -51,7 +56,7 @@ export default function TrialBanner({ onExpired }: TrialBannerProps) {
     }, [onExpired, timeLeft.total]);
 
     // Don't show if expired or dismissed
-    if (timeLeft.total === 0 || dismissed) return null;
+    if (!isMounted || timeLeft.total === 0 || dismissed) return null;
 
     const isLastHour = timeLeft.days === 0 && timeLeft.hours === 0;
     const isLastDay = timeLeft.days === 0;
@@ -59,18 +64,18 @@ export default function TrialBanner({ onExpired }: TrialBannerProps) {
     return (
         <div
             className={`fixed bottom-5 left-1/2 -translate-x-1/2 z-[9990] transition-all duration-500 ${isLastHour
-                    ? "animate-pulse-slow"
-                    : ""
+                ? "animate-pulse-slow"
+                : ""
                 }`}
             role="status"
             aria-live="polite"
         >
             <div
                 className={`flex items-center gap-4 px-5 py-3.5 rounded-2xl shadow-2xl border backdrop-blur-xl select-none ${isLastHour
-                        ? "bg-gradient-to-r from-rose-600 to-orange-500 border-rose-400/30 shadow-rose-500/30"
-                        : isLastDay
-                            ? "bg-gradient-to-r from-amber-600 to-orange-500 border-amber-400/30 shadow-amber-500/30"
-                            : "bg-gradient-to-r from-[#01334c] to-[#0a6b8a] border-[#01334c]/30 shadow-[#01334c]/30"
+                    ? "bg-gradient-to-r from-rose-600 to-orange-500 border-rose-400/30 shadow-rose-500/30"
+                    : isLastDay
+                        ? "bg-gradient-to-r from-amber-600 to-orange-500 border-amber-400/30 shadow-amber-500/30"
+                        : "bg-gradient-to-r from-[#01334c] to-[#0a6b8a] border-[#01334c]/30 shadow-[#01334c]/30"
                     }`}
             >
                 {/* Icon + label */}

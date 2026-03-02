@@ -4,16 +4,18 @@ import React, { useEffect, useState } from 'react';
 import { useProfileStore } from '@/app/lib/store';
 import EditorPreview from '@/app/components/editor/EditorPreview';
 import AIChatPanel from '@/app/components/editor/AIChatPanel';
-import { ChevronLeft, Save } from 'lucide-react';
+import { ChevronLeft, Save, Sparkles } from 'lucide-react';
 import DownloadOptions from '@/app/components/editor/DownloadOptions';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 
 import { supabase } from '@/app/lib/supabase';
 import AuthModal from '@/app/components/AuthModal';
+import UseMyDataModal from '@/app/components/editor/UseMyDataModal';
+import { saveProfile } from '@/app/lib/db';
 
 export default function DesignEditorPage() {
-    const { profileData, user, setShowAuthModal, setPendingAction } = useProfileStore();
+    const { profileData, user, setUser, showAuthModal, setShowAuthModal, setPendingAction, messages, addMessage, activeProfileId, setActiveProfileId } = useProfileStore();
     const params = useParams();
     const router = useRouter();
     const templateId = params.templateId as string;
@@ -23,6 +25,21 @@ export default function DesignEditorPage() {
     const [loading, setLoading] = useState(true);
 
     const [templateMeta, setTemplateMeta] = useState<any>(null);
+    const [showUseMyDataModal, setShowUseMyDataModal] = useState(false);
+    const [hasSeenModal, setHasSeenModal] = useState(false);
+
+    // Sync Auth Status
+    useEffect(() => {
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            setUser(session?.user ?? null);
+        });
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            setUser(session?.user ?? null);
+        });
+
+        return () => subscription.unsubscribe();
+    }, [setUser]);
 
     // Load template content
     useEffect(() => {
@@ -56,6 +73,11 @@ export default function DesignEditorPage() {
 
                     const rendered = template(displayData);
                     setCurrentHtml(rendered);
+
+                    if (!hasSeenModal) {
+                        setShowUseMyDataModal(true);
+                        setHasSeenModal(true);
+                    }
                 }
             } catch (error) {
                 console.error("Error loading template:", error);
@@ -97,6 +119,63 @@ export default function DesignEditorPage() {
         }
     };
 
+    const handleAutoFill = async () => {
+        setIsGenerating(true);
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            const token = session?.access_token;
+
+            const prompt = "Act as an expert designer. Carefully replace all placeholder names, job titles, and sample descriptions in this template with the actual user data provided. Keep all HTML tags, classes, and inline styles EXACTLY the same. If a field from the user data is missing, leave the placeholder or remove the text gracefully. Remove any remaining Handlebars placeholders that couldn't be filled.";
+
+            const res = await fetch('/api/ai-edit', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                },
+                body: JSON.stringify({
+                    html: currentHtml,
+                    prompt,
+                    userData: profileData
+                })
+            });
+            const data = await res.json();
+            if (data.html) {
+                setCurrentHtml(data.html);
+                setShowUseMyDataModal(false);
+
+                if (user) {
+                    const botMsg = {
+                        sender: 'bot' as 'bot', // Type casting to literal
+                        text: `I've successfully customized the ${templateMeta?.name || 'template'} with your profile data. You can find it saved in your history.`
+                    };
+                    addMessage(botMsg);
+
+                    try {
+                        const allMessages = [...messages, botMsg];
+                        const saved = await saveProfile(
+                            user.id,
+                            profileData,
+                            allMessages,
+                            data.html,
+                            activeProfileId || undefined
+                        );
+                        if (saved && !activeProfileId) {
+                            setActiveProfileId(saved.id);
+                        }
+                    } catch (err) {
+                        console.error("Auto-save failed:", err);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error("AI Auto-fill failed:", error);
+            alert("Failed to auto-fill data.");
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
     // Listen for messages from iframe
     const fileInputRef = React.useRef<HTMLInputElement>(null);
     const [templateImageId, setTemplateImageId] = useState<string | null>(null);
@@ -114,28 +193,6 @@ export default function DesignEditorPage() {
                     a.click();
                     document.body.removeChild(a);
                     setIsGenerating(false);
-                } else if (format === 'pdf') {
-                    // Generate PDF from the received PNG data URL to preserve ALL styles
-                    try {
-                        const { jsPDF } = (await import('jspdf'));
-                        const pdf = new jsPDF({
-                            orientation: 'portrait',
-                            unit: 'px',
-                            format: 'a4'
-                        });
-
-                        const imgProps = pdf.getImageProperties(dataUrl);
-                        const pdfWidth = pdf.internal.pageSize.getWidth();
-                        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-
-                        pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, pdfHeight);
-                        pdf.save(`${fileName}.pdf`);
-                    } catch (e) {
-                        console.error("PDF Generation failed", e);
-                        alert("PDF Generation failed");
-                    } finally {
-                        setIsGenerating(false);
-                    }
                 }
             } else if (event.data.type === 'DOWNLOAD_ERROR') {
                 console.error("Download error from iframe:", event.data.error);
@@ -205,7 +262,7 @@ export default function DesignEditorPage() {
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
                 setIsGenerating(false);
-            } else {
+            } else if (format === 'png') {
                 // Request iframe to generate the image
                 const iframe = document.getElementById('template-preview-iframe') as HTMLIFrameElement;
                 if (!iframe || !iframe.contentWindow) {
@@ -217,6 +274,60 @@ export default function DesignEditorPage() {
                     format,
                     fileName
                 }, '*');
+            } else if (format === 'pdf') {
+                const iframe = document.getElementById('template-preview-iframe') as HTMLIFrameElement;
+                if (!iframe || !iframe.contentWindow || !iframe.contentDocument) {
+                    throw new Error("Preview not ready");
+                }
+
+                iframe.contentWindow.postMessage({ type: 'PREPARE_FOR_PDF' }, '*');
+                // Brief wait for UI states in iframe to hide
+                await new Promise(resolve => setTimeout(resolve, 200));
+
+                const element = iframe.contentDocument.documentElement;
+
+                const html2pdf = (await import("html2pdf.js")).default;
+                const opt = {
+                    margin: 0,
+                    filename: `${fileName}.pdf`,
+                    image: { type: "jpeg" as const, quality: 0.98 },
+                    html2canvas: {
+                        scale: 2,
+                        useCORS: true,
+                        allowTaint: true,
+                        letterRendering: true,
+                        scrollY: 0,
+                        scrollX: 0,
+                        backgroundColor: "#ffffff",
+                        window: iframe.contentWindow
+                    },
+                    jsPDF: {
+                        unit: "mm",
+                        format: "a4",
+                        orientation: "portrait" as const,
+                        compress: true,
+                    },
+                    pagebreak: {
+                        mode: ["avoid-all", "css", "legacy"] as string[],
+                        before: ".pdf-page-break",
+                    },
+                };
+
+                const pdfObj = await html2pdf()
+                    .set(opt)
+                    .from(element)
+                    .toPdf()
+                    .get("pdf");
+
+                const totalPages = pdfObj.internal.getNumberOfPages();
+                if (totalPages > 2) {
+                    for (let i = totalPages; i > 2; i--) {
+                        pdfObj.deletePage(i);
+                    }
+                }
+
+                pdfObj.save(`${fileName}.pdf`);
+                setIsGenerating(false);
             }
         } catch (error) {
             console.error("Download failed:", error);
@@ -259,10 +370,41 @@ export default function DesignEditorPage() {
                     </div>
                 </div>
 
-                <button className="flex items-center gap-2 px-4 py-2 text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 hover:text-[#01334c] rounded-xl text-sm font-semibold transition-all shadow-sm">
-                    <Save className="w-4 h-4" /> Save Draft
-                </button>
                 <div className="flex items-center gap-3">
+                    <button
+                        onClick={() => setShowUseMyDataModal(true)}
+                        className="flex items-center gap-2 px-4 py-2 text-[#01334c] bg-white border border-[#01334c]/20 hover:bg-[#01334c]/5 rounded-xl text-sm font-semibold transition-all shadow-sm"
+                    >
+                        <Sparkles className="w-4 h-4" /> Auto-Fill Data
+                    </button>
+                    <button
+                        onClick={async () => {
+                            if (!user) {
+                                setPendingAction(() => () => { });
+                                setShowAuthModal(true);
+                                return;
+                            }
+                            try {
+                                const saved = await saveProfile(
+                                    user.id,
+                                    profileData,
+                                    messages,
+                                    currentHtml,
+                                    activeProfileId || undefined
+                                );
+                                if (saved && !activeProfileId) {
+                                    setActiveProfileId(saved.id);
+                                }
+                                alert("Draft saved successfully!");
+                            } catch (err) {
+                                console.error("Manual save failed", err);
+                                alert("Failed to save draft.");
+                            }
+                        }}
+                        className="flex items-center gap-2 px-4 py-2 text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 hover:text-[#01334c] rounded-xl text-sm font-semibold transition-all shadow-sm"
+                    >
+                        <Save className="w-4 h-4" /> Save Draft
+                    </button>
                     <DownloadOptions onDownload={handleDownload} isDownloading={isGenerating} />
                 </div>
             </div>
@@ -310,7 +452,14 @@ export default function DesignEditorPage() {
                 onChange={handleImageUpload}
             />
             {/* Auth Modal for guest prompt */}
-            {!user && <AuthModal />}
+            {showAuthModal && <AuthModal />}
+            <UseMyDataModal
+                isOpen={showUseMyDataModal}
+                onClose={() => setShowUseMyDataModal(false)}
+                onConfirm={handleAutoFill}
+                isGenerating={isGenerating}
+                hasData={!!(profileData?.fullName || profileData?.expertiseAreas?.length)}
+            />
         </div>
     );
 }

@@ -71,6 +71,7 @@ export default function EditorPreview({ html, data, onHtmlChange, width = 794, h
                     border: 1px solid rgba(255,255,255,0.3);
                 }
             </style>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
             <script id="editor-script">
             (function() {
                 console.log("Editor script initialized via direct injection");
@@ -419,59 +420,61 @@ export default function EditorPreview({ html, data, onHtmlChange, width = 794, h
                         }
                     }
 
-                    if (type === 'GENERATE_DOWNLOAD') {
-                         try {
-                             // ... (style handling same as before)
-                             
-                             // CLEANUP FOR GENERATION
-                             document.querySelectorAll('img').forEach(img => {
-                                 img.style.outline = '';
-                                 img.style.boxShadow = '';
-                                 img.style.cursor = '';
-                             });
-                             if (overlayBtn) overlayBtn.style.display = 'none';
-
-                             setTimeout(() => {
-                                 console.log("Starting html2canvas generation...");
-                                 if (window.html2canvas) {
-                                     window.html2canvas(document.body, {
-                                         scale: 2, // higher resolution
-                                         useCORS: true, // critical for external images like from Supabase
-                                         allowTaint: true,
-                                         backgroundColor: '#ffffff',
-                                         logging: true // enable html2canvas internal logs
-                                     }).then(canvas => {
-                                         console.log("Canvas generated successfully!");
-                                         const dataUrl = canvas.toDataURL('image/png', 1.0);
-                                         window.parent.postMessage({
-                                             type: 'DOWNLOAD_READY',
-                                             format: format,
-                                             dataUrl: dataUrl,
-                                             fileName: fileName
-                                         }, '*');
-                                     }).catch(err => {
-                                         console.error("html2canvas promise rejected:", err);
-                                         let errMsg = "Canvas generation failed";
-                                         if (err) {
-                                             if (err instanceof Error) errMsg = err.message;
-                                             else if (typeof err === 'object') errMsg = JSON.stringify(err);
-                                             else errMsg = String(err);
-                                         }
-                                         window.parent.postMessage({ type: 'DOWNLOAD_ERROR', error: errMsg }, '*');
-                                     });
-                                 } else {
-                                     window.parent.postMessage({ type: 'DOWNLOAD_ERROR', error: 'html2canvas library not loaded' }, '*');
-                                 }
-                             }, 500);
-                        } catch (err) {
-                             console.error("error inside GENERATE_DOWNLOAD", err);
-                             window.parent.postMessage({ type: 'DOWNLOAD_ERROR', error: err ? err.toString() : 'Unknown error' }, '*');
-                         }
+                    if (type === 'PREPARE_FOR_PDF') {
+                         document.querySelectorAll('img').forEach(function(img) {
+                             img.style.outline = '';
+                             img.style.boxShadow = '';
+                             img.style.cursor = '';
+                         });
+                         var overlayBtn = document.querySelector('.img-overlay-btn');
+                         if (overlayBtn) overlayBtn.style.display = 'none';
                     }
-                });
-            })();
-            <script src="https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.min.js"></script>
-            <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+                    if (type === 'GENERATE_DOWNLOAD') {
+                         if (format === 'png') {
+                              // CLEANUP FOR GENERATION
+                              document.querySelectorAll('img').forEach(function(img) {
+                                  img.style.outline = '';
+                                  img.style.boxShadow = '';
+                                  img.style.cursor = '';
+                              });
+                              var overlayBtn = document.querySelector('.img-overlay-btn');
+                              if (overlayBtn) overlayBtn.style.display = 'none';
+
+                              setTimeout(function() {
+                                  console.log("Starting image generation...");
+                                  if (window.htmlToImage) {
+                                      window.htmlToImage.toPng(document.body, {
+                                          pixelRatio: 2,
+                                          backgroundColor: '#ffffff',
+                                          cacheBust: true,
+                                          imagePlaceholder: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
+                                      }).then(function(dataUrl) {
+                                          console.log("Image generated successfully!");
+                                          window.parent.postMessage({
+                                              type: 'DOWNLOAD_READY',
+                                              format: format,
+                                              dataUrl: dataUrl,
+                                              fileName: fileName
+                                          }, '*');
+                                      }).catch(function(err) {
+                                          console.error("htmlToImage promise rejected:", err);
+                                          var errMsg = "Image generation failed";
+                                          if (err) {
+                                               if (err instanceof Error) errMsg = err.message;
+                                               else if (typeof err === 'object') errMsg = JSON.stringify(err);
+                                               else errMsg = String(err);
+                                           }
+                                           window.parent.postMessage({ type: 'DOWNLOAD_ERROR', error: errMsg }, '*');
+                                       });
+                                  } else {
+                                      window.parent.postMessage({ type: 'DOWNLOAD_ERROR', error: 'html-to-image library not loaded' }, '*');
+                                  }
+                              }, 500);
+                         }
+                 });
+             })();
+             </script>
         `;
 
         let finalHtml = compiledHtml;
