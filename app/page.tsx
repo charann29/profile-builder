@@ -188,5 +188,4 @@ export default function MasterLandingPage() {
             <Footer />
         </main>
     );
->>>>>>> a254bc2 (feat: adding new master landing page)
 }

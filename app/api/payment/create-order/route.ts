@@ -9,10 +9,7 @@ const supabaseAdmin = createClient(
     { auth: { autoRefreshToken: false, persistSession: false } }
 );
 
-const razorpay = new Razorpay({
-    key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
-    key_secret: process.env.RAZORPAY_KEY_SECRET!,
-});
+// Razorpay initialized dynamically to prevent build failures during static generation
 
 const AMOUNT_PAISE = 9900; // ₹99 in paise
 const CURRENCY = 'INR';
@@ -48,6 +45,11 @@ export async function POST(req: NextRequest) {
         }
 
         // ── Create Razorpay order ─────────────────────────────────────────────
+        const razorpay = new Razorpay({
+            key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
+            key_secret: process.env.RAZORPAY_KEY_SECRET!,
+        });
+
         const order = await razorpay.orders.create({
             amount: AMOUNT_PAISE,
             currency: CURRENCY,
