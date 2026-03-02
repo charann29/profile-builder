@@ -283,13 +283,11 @@ export default function Home() {
     setScrapeMessage("");
 
     try {
-      const res = await fetch(
-        process.env.NEXT_PUBLIC_SCRAPER_URL || "http://localhost:8000/scrape",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ linkedin_url: linkedinUrl.trim() }),
-        },
+      const res = await fetch("/api/scrape-linkedin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ linkedin_url: linkedinUrl.trim() }),
+      },
       );
 
       if (res.ok) {

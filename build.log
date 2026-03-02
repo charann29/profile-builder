@@ -1,0 +1,57 @@
+
+> profile-builder@0.1.0 build
+> next build
+
+   ▲ Next.js 15.1.7
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Skipping validation of types
+   Skipping linting
+   Collecting page data ...
+   Generating static pages (0/25) ...
+   Generating static pages (6/25) 
+   Generating static pages (12/25) 
+   Generating static pages (18/25) 
+ ✓ Generating static pages (25/25)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                              Size     First Load JS
+┌ ○ /                                    1.35 kB         120 kB
+├ ○ /_not-found                          992 B           107 kB
+├ ○ /admin                               895 B           107 kB
+├ ○ /admin/templates                     3.69 kB         164 kB
+├ ƒ /admin/templates/[id]/edit           587 B           193 kB
+├ ○ /admin/templates/new                 281 B           193 kB
+├ ○ /admin/users                         2.13 kB         163 kB
+├ ƒ /api/admin/refine-template           178 B           106 kB
+├ ƒ /api/admin/templates                 178 B           106 kB
+├ ƒ /api/ai-edit                         178 B           106 kB
+├ ƒ /api/auth/bootstrap-admin            178 B           106 kB
+├ ƒ /api/generate-design                 178 B           106 kB
+├ ƒ /api/proxy-image                     178 B           106 kB
+├ ƒ /api/scrape-linkedin                 178 B           106 kB
+├ ƒ /api/send-otp                        178 B           106 kB
+├ ƒ /api/template                        178 B           106 kB
+├ ƒ /api/template/[id]                   178 B           106 kB
+├ ƒ /api/templates                       178 B           106 kB
+├ ƒ /api/upload-image                    178 B           106 kB
+├ ƒ /api/verify-otp                      178 B           106 kB
+├ ○ /chat                                38.4 kB         195 kB
+├ ○ /design                              2.14 kB         158 kB
+├ ƒ /design/[templateId]                 5.54 kB         195 kB
+├ ○ /home                                9.92 kB         128 kB
+├ ○ /icon.ico                            0 B                0 B
+├ ○ /icon.png                            0 B                0 B
+└ ƒ /templates                           5.27 kB         166 kB
++ First Load JS shared by all            106 kB
+  ├ chunks/5e770d60-956cff8aaae26598.js  53 kB
+  ├ chunks/8759-e15e7954648b3090.js      50.7 kB
+  └ other shared chunks (total)          2.22 kB
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

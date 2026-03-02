@@ -178,8 +178,9 @@ export default function AuthModal() {
           setError(data.error || "OTP verification failed.");
         }
       }
-    } catch {
-      setError("Verification failed. Please try again.");
+    } catch (err) {
+      console.error("OTP verification error:", err);
+      setError(err instanceof Error ? `Verification failed: ${err.message}` : "Verification failed. Please try again.");
     } finally {
       setLoading(false);
     }
