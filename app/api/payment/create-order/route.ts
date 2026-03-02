@@ -4,8 +4,8 @@ import { createClient } from '@supabase/supabase-js';
 import { isTrialActive } from '@/app/lib/trial';
 
 const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://dummy.supabase.co',
+    process.env.SUPABASE_SERVICE_ROLE_KEY || 'dummy',
     { auth: { autoRefreshToken: false, persistSession: false } }
 );
 

@@ -11,8 +11,8 @@ export const dynamic = 'force-dynamic';
 export default async function TemplatesPage() {
     // Server-side Supabase client
     const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY! // Use Service Key for server-side fetching if needed, or Anon
+        process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://dummy.supabase.co',
+        process.env.SUPABASE_SERVICE_ROLE_KEY || 'dummy' // Use Service Key for server-side fetching if needed, or Anon
     );
 
     const { data: templates } = await supabase

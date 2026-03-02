@@ -3,8 +3,8 @@ import { createClient } from "@supabase/supabase-js";
 
 // Server-side Supabase client (uses anon key; email confirmation is disabled)
 const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://dummy.supabase.co',
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'dummy',
 );
 
 function shadowEmail(mobile: string) {
@@ -67,8 +67,8 @@ export async function POST(req: NextRequest) {
 
         // Create an admin client to securely manage the user
         const supabaseAdmin = createClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.SUPABASE_SERVICE_ROLE_KEY!
+            process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://dummy.supabase.co',
+            process.env.SUPABASE_SERVICE_ROLE_KEY || 'dummy'
         );
 
         // 1. Try to find existing user by email (avoids loading ALL users)
